@@ -1,0 +1,30 @@
+/* Simple navbar styles used by Landing page */
+.site-nav{background:#111827;position:sticky;top:0;left:0;right:0;z-index:40;border-bottom:1px solid rgba(255,255,255,0.06)}
+.site-nav .nav-inner{display:flex;align-items:center;justify-content:space-between;padding:12px 0;transition:box-shadow 180ms ease, background 180ms ease, transform 180ms ease}
+.brand{font-weight:700;color:#f9fafb;text-decoration:none}
+.nav-links a{margin-left:12px;color:#f9fafb;text-decoration:none}
+.nav-links .btn{background:var(--gold, #f59e0b);color:#0b1220;padding:6px 10px;border-radius:4px}
+.btn-ghost{background:transparent;border:1px solid rgba(255,255,255,0.12);padding:6px 10px;border-radius:4px;margin-left:8px}
+.user-name{margin-left:12px;font-weight:600;color:#f9fafb}
+
+/* Sticky when scrolled: pop out with shadow and stick to top */
+.site-nav.scrolled{box-shadow:0 12px 40px rgba(2,6,23,0.6);background:linear-gradient(180deg,#0b1220, rgba(11,18,32,0.98));border-bottom:1px solid rgba(255,255,255,0.06)}
+
+/* Divider line under nav to separate it from the page content */
+.site-nav{backdrop-filter: blur(3px);}
+
+/* Make the nav visually distinct from main content: subtle lift and stronger border */
+.site-nav .nav-inner{background:transparent}
+.site-nav .brand{display:inline-block;padding:2px 6px;border-radius:6px}
+.site-nav.scrolled .brand{background:rgba(245,158,11,0.06)}
+
+/* On small screens keep clear separation */
+@media(max-width:800px){
+  .site-nav{border-bottom:3px solid rgba(15,23,42,0.06)}
+}
+
+/* Ensure the navbar background stretches edge-to-edge while the inner content aligns with site container */
+.site-nav > .container{max-width:1100px;margin:0 auto}
+
+/* reset body margin if present to avoid unexpected gaps */
+html,body{margin:0;padding:0}
