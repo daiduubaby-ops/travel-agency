@@ -7,6 +7,26 @@
 .btn-ghost{background:transparent;border:1px solid rgba(255,255,255,0.12);padding:6px 10px;border-radius:4px;margin-left:8px}
 .user-name{margin-left:12px;font-weight:600;color:#f9fafb}
 
+/* Quick action icons (top-right) */
+.quick-actions{display:flex;align-items:center;gap:18px;margin-left:16px}
+.action-item{display:flex;flex-direction:column;align-items:center;justify-content:center;color:#9ca3af;text-decoration:none;font-size:12px}
+.action-item .label{margin-top:6px;display:block;color:inherit;font-size:11px}
+.action-item svg{transition:color 150ms ease, transform 150ms ease;stroke:currentColor}
+.action-item:hover{color:#374151}
+.action-item:focus{outline:2px solid rgba(55,65,81,0.12);outline-offset:2px}
+
+/* Keep spacing and alignment on small screens */
+@media(max-width:800px){
+  .quick-actions{gap:12px}
+  .action-item .label{display:none}
+}
+
+/* icon styling inside nav links */
+.nav-icon{display:inline-flex;align-items:center;justify-content:center;margin-right:8px;vertical-align:middle;color:var(--gold, #f59e0b)}
+.nav-links a{display:inline-flex;align-items:center}
+.nav-links .btn .nav-icon{color:inherit}
+.nav-links a:hover .nav-icon{transform:translateY(-2px)}
+
 /* Sticky when scrolled: pop out with shadow and stick to top */
 .site-nav.scrolled{box-shadow:0 12px 40px rgba(2,6,23,0.6);background:linear-gradient(180deg,#0b1220, rgba(11,18,32,0.98));border-bottom:1px solid rgba(255,255,255,0.06)}
 

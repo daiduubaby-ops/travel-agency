@@ -45,8 +45,8 @@ export default function Dashboard(){
     return (
       <div className="dashboard">
         <div className="container">
-          <h2>Dashboard</h2>
-          <p>You must be signed in to view the dashboard. <a href="/login">Sign in</a></p>
+          <h2>Дашбоард</h2>
+          <p>Дашбоард үзэхийн тулд нэвтэрсэн байх шаардлагатай. <a href="/login">Нэвтрэх</a></p>
         </div>
       </div>
     )
@@ -55,13 +55,16 @@ export default function Dashboard(){
   return (
     <div className="dashboard">
       <div className="container">
-        <h2>{user.name}'s Dashboard</h2>
-        <p>Email: {user.email}</p>
+        <h2>{user.name} - таны дашбоард</h2>
+        <p>И-мэйл: {user.email}</p>
+        {user.isAdmin && (
+          <p><a href="/admin/programs" className="btn">Админ: Өдрийн хөтөлбөрүүдийг удирдах</a></p>
+        )}
         <section>
-          <h3>Your bookings</h3>
-          {loading && <p>Loading bookings…</p>}
+          <h3>Таны захиалгууд</h3>
+          {loading && <p>Захиалгуудыг уншиж байна…</p>}
           {error && <p style={{color:'red'}}>{error}</p>}
-          {!loading && bookings && bookings.length === 0 && <p>You have no bookings.</p>}
+          {!loading && bookings && bookings.length === 0 && <p>Танд ямар ч захиалга байхгүй байна.</p>}
           {!loading && bookings && bookings.length > 0 && (
             <div className="bookings-list">
               {bookings.map(b => (

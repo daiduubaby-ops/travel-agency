@@ -12,6 +12,13 @@
 
 .hero{background:linear-gradient(180deg,var(--bg-light) 0%, var(--bg-mid) 60%); color:var(--text-dark); padding:80px 0}
 .hero-inner{max-width:1000px; margin:0 auto; padding:0 20px; text-align:center}
+.hero-illustration{width:100%; height:260px; display:block; margin:0 auto 18px; border-radius:12px; overflow:hidden; box-shadow:0 18px 40px rgba(15,23,42,0.06)}
+.hero .hero-inner{position:relative; z-index:2}
+.hero{position:relative; overflow:visible}
+
+/* small decorative accent near header text */
+.hero .lead{position:relative; padding-top:6px}
+.hero .lead:before{content:""; position:absolute; left:50%; transform:translateX(-50%); top:0; width:64px; height:4px; background:linear-gradient(90deg,var(--gold), var(--gold-dark)); border-radius:4px; opacity:0.9}
 .hero h1{font-size:44px; margin:0 0 12px}
 .hero .lead{font-size:18px; color:var(--muted); margin-bottom:8px}
 .cta{margin-top:18px}
@@ -32,9 +39,37 @@
 .listings{display:flex; gap:16px; justify-content:center}
 .listing{background:#fff; border-radius:10px; width:300px; box-shadow:0 8px 20px rgba(31,41,55,0.06); overflow:hidden}
 .listing-img{height:160px; background:linear-gradient(135deg,#fde68a,#f59e0b);}
+
+/* add subtle Mongolian pattern overlay on cards */
+.card, .listing{background-image:radial-gradient(circle at 10% 10%, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.00) 20%);}
+
+/* adjust hero typography for smaller screens and ensure svg scales */
+@media(max-width:800px){
+  .hero-illustration{height:200px}
+  .hero h1{font-size:28px}
+}
 .listing-body{padding:12px}
 .listing-body h3{margin:0 0 6px}
 .listing-body p{color:var(--muted); margin:0}
+
+/* Programs section styles */
+.programs{padding:36px 0}
+.programs h2{margin-bottom:6px}
+.programs-lead{color:var(--muted); margin-bottom:18px}
+.program-grid{display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:16px}
+.program-card{background:linear-gradient(180deg,#ffffff,#fcfbf8); border-radius:10px; box-shadow:0 10px 26px rgba(31,41,55,0.06); overflow:hidden; display:flex; flex-direction:column}
+.program-media{height:120px; background:linear-gradient(135deg,#fde68a,#f59e0b);}
+.program-body{padding:12px; display:flex; flex-direction:column; gap:8px}
+.program-body h3{font-size:16px; margin:0}
+.program-meta{display:flex; gap:12px; color:var(--muted); font-size:14px}
+.program-extra{color:var(--muted); font-size:14px; margin:0}
+.program-actions{margin-top:8px; display:flex; gap:8px}
+.program-actions .btn{padding:8px 10px; font-size:14px}
+
+@media(max-width:640px){
+  .program-media{height:100px}
+  .program-body h3{font-size:15px}
+}
 
 /* Layout for listings two-column view */
 .listings.two-column{display:flex; gap:12px; align-items:flex-start}
@@ -89,9 +124,21 @@
 
 .site-footer{background:var(--bg-mid); color:var(--text-dark); padding:18px 0; text-align:center}
 
+/* News/article styles */
+.news-article{background:#fff; padding:22px; border-radius:10px; box-shadow:0 8px 24px rgba(31,41,55,0.06)}
+.news-article h1{font-size:28px; margin-top:0}
+.news-article h2{margin-top:18px}
+.news-article p{line-height:1.7; color:var(--text-dark)}
+.news-article ul{margin-left:20px}
+.news-article strong{color:var(--text-dark)}
+
 @media(max-width:800px){
   .cards, .listings{flex-direction:column; align-items:center}
   .hero h1{font-size:32px}
+}
+
+@media(max-width:900px){
+  /* responsive adjustments previously for news removed */
 }
 
 /* Sticky footer for selected items actions */

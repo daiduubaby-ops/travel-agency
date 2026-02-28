@@ -8,11 +8,11 @@ const { getDb } = require('../utils/db');
 router.post('/register', async (req, res) => {
   try {
     const { name, email, password } = req.body;
-    if (!name || !email || !password) return res.status(400).json({ message: 'Missing fields' });
+    if (!name || !email || !password) return res.status(400).json({ message: 'Мэдээлэл дутуу байна' });
 
     const db = getDb();
     const existing = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
-    if (existing) return res.status(400).json({ message: 'Email already in use' });
+    if (existing) return res.status(400).json({ message: 'И-мэйл аль хэдийн ашиглагдаж байна' });
 
     const hashed = await bcrypt.hash(password, 10);
     const now = new Date().toISOString();
@@ -24,7 +24,7 @@ router.post('/register', async (req, res) => {
     res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role, isAdmin: !!user.isAdmin } });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Серверийн алдаа' });
   }
 });
 
@@ -32,20 +32,20 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
-    if (!email || !password) return res.status(400).json({ message: 'Missing fields' });
+    if (!email || !password) return res.status(400).json({ message: 'Мэдээлэл дутуу байна' });
 
     const db = getDb();
     const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
-    if (!user) return res.status(400).json({ message: 'Invalid credentials' });
+    if (!user) return res.status(400).json({ message: 'Нэвтрэх мэдээлэл буруу байна' });
 
     const match = await bcrypt.compare(password, user.password);
-    if (!match) return res.status(400).json({ message: 'Invalid credentials' });
+    if (!match) return res.status(400).json({ message: 'Нэвтрэх мэдээлэл буруу байна' });
 
     const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
     res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role, isAdmin: !!user.isAdmin } });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Серверийн алдаа' });
   }
 });
 

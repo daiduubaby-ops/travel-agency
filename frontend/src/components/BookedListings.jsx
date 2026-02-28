@@ -20,18 +20,18 @@ export default function BookedListings(){
 
     // Server-side booking: call cancel endpoint
     const token = localStorage.getItem('token')
-    if(!token){ setError('You must be logged in to cancel bookings'); return }
+    if(!token){ setError('Захиалгыг цуцлахын тулд нэвтэрсэн байх шаардлагатай'); return }
     try{
       const res = await fetch(`/api/bookings/${booking.id}/cancel`, { method: 'PUT', headers: { Authorization: `Bearer ${token}` } })
       const data = await res.json().catch(() => ({}))
-      if(!res.ok){ setError(data.message || 'Failed to cancel booking') }
+      if(!res.ok){ setError(data.message || 'Захиалгыг цуцлахад амжилтгүй боллоо') }
       else {
         // replace booking in list with updated one
         setBookings(prev => prev.map(b => b.id === data.id ? data : b))
       }
     }catch(err){
       console.error(err)
-      setError('Network error')
+      setError('Сүлжээний алдаа')
     }
   }
 
@@ -52,7 +52,7 @@ export default function BookedListings(){
         }
         const res = await fetch('/api/bookings/my', { headers: { Authorization: `Bearer ${token}` } })
         if(!res.ok){
-          try{ const data = await res.json(); setError(data.message || 'Failed to load bookings') } catch(e){ setError('Failed to load bookings') }
+          try{ const data = await res.json(); setError(data.message || 'Захиалгыг уншихад алдаа гарлаа') } catch(e){ setError('Захиалгыг уншихад алдаа гарлаа') }
           // still show local ones
           setBookings(localForUser)
         } else {
@@ -69,7 +69,7 @@ export default function BookedListings(){
         }
       }catch(err){
         console.error(err)
-        setError('Network error')
+        setError('Сүлжээний алдаа')
         setBookings(localForUser)
       }finally{ setLoading(false) }
     }
@@ -78,10 +78,10 @@ export default function BookedListings(){
 
   return (
     <div className="container">
-      <h2>Your booked listings</h2>
-      {loading && <p>Loading…</p>}
+      <h2>Таны захиалсан жагсаалт</h2>
+      {loading && <p>Уншиж байна…</p>}
       {error && <p style={{color:'red'}}>{error}</p>}
-      {!loading && bookings && bookings.length === 0 && <p>You have no bookings.</p>}
+      {!loading && bookings && bookings.length === 0 && <p>Танд ямар ч захиалга байхгүй байна.</p>}
       {!loading && bookings && bookings.length > 0 && (
         <div style={{display:'grid',gap:12}}>
           {bookings.map(b => (
@@ -89,11 +89,11 @@ export default function BookedListings(){
               <div className="listing-body">
                 <h4 style={{margin:'0 0 4px 0'}}>{b.ger_title}</h4>
                 <div style={{color:'#6b7280',fontSize:13}}>{b.ger_location} — ${b.totalPrice} — <strong>{b.status}</strong></div>
-                <div style={{fontSize:13,marginTop:6}}>From {new Date(b.checkInDate).toISOString().slice(0,10)} to {new Date(b.checkOutDate).toISOString().slice(0,10)}</div>
-                <div style={{marginTop:6}}><a href={`/booking?id=${b.gerId}`}>View listing</a></div>
-                {b.status === 'confirmed' && (
+                <div style={{fontSize:13,marginTop:6}}>Эхлэх: {new Date(b.checkInDate).toISOString().slice(0,10)} — Дуусах: {new Date(b.checkOutDate).toISOString().slice(0,10)}</div>
+                <div style={{marginTop:6}}><a href={`/booking?id=${b.gerId}`}>Жагсаалтыг үзэх</a></div>
+                {(String(b.id).startsWith('sample') || String(b.gerId).startsWith('sample') || b.status === 'confirmed') && (
                   <div style={{marginTop:8}}>
-                    <button className="btn" onClick={() => handleCancel(b)}>Cancel booking</button>
+                    <button className="btn" onClick={() => handleCancel(b)}>{String(b.id).startsWith('sample') || String(b.gerId).startsWith('sample') ? 'Цуцлах' : 'Cancel booking'}</button>
                   </div>
                 )}
               </div>

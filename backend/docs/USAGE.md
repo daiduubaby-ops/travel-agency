@@ -1,4 +1,4 @@
-Usage notes
+Хэрэглэх заавар
 
-- Register via POST /api/auth/register. Save token in Authorization header as `Bearer <token>`.
-- Create bookings: POST /api/bookings { gerId, checkInDate, checkOutDate }
+- /api/auth/register руу POST хийнэ. Туслах токеныг Authorization толгой хэсэгт `Bearer <token>` хэлбэрээр хадгална.
+- Захиалга үүсгэх: POST /api/bookings { gerId, checkInDate, checkOutDate }

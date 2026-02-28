@@ -66,13 +66,13 @@ export default function Booking(){
       const data = await res.json()
       if(!res.ok) setMessage(data.message || 'Booking failed')
       else {
-        setMessage('Booking confirmed!')
+        setMessage('Захиалгаа баталгаажууллаа!')
         // redirect to dashboard or bookings page
         setTimeout(() => window.location.href = '/booked', 1200)
       }
     }catch(err){
       console.error(err)
-      setMessage('Network error')
+      setMessage('Сүлжээний алдаа')
     }
   }
 
@@ -88,36 +88,36 @@ export default function Booking(){
     }catch(e){/* ignore */}
   }
 
-  if(!id) return <div className="container"><p>No listing selected. Go back to <a href="/listings">listings</a>.</p></div>
+  if(!id) return <div className="container"><p>Ямар нэгэн жагсаалт сонгогдоогүй байна. Буцах: <a href="/listings">жагсаалт</a>.</p></div>
 
   return (
     <div className="container">
-      <h2>Book Ger</h2>
+      <h2>Гэр захиалах</h2>
       {ger && (
         <div className="listing">
           <div className="listing-img" />
           <div className="listing-body">
             <h3>{ger.title}</h3>
-            <p>{ger.location} — ${ger.pricePerNight} / night</p>
+            <p>{ger.location} — ${ger.pricePerNight} / шөнө</p>
           </div>
         </div>
       )}
 
       <form onSubmit={handleBook} style={{maxWidth:400}}>
         <label>
-          Check-in
+          Ирэх огноо
           <input type="date" value={checkIn} onChange={e=>setCheckIn(e.target.value)} required />
         </label>
 
         <label>
-          Check-out
+          Гарах огноо
           <input type="date" value={checkOut} onChange={e=>setCheckOut(e.target.value)} required />
         </label>
 
         {message && <div style={{marginTop:8}}>{message}</div>}
 
         <div style={{marginTop:12}}>
-          <button className="btn" type="submit">Confirm Booking</button>
+          <button className="btn" type="submit">Захиалгаа батлах</button>
         </div>
       </form>
     </div>

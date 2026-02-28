@@ -32,7 +32,7 @@ router.get('/:id', async (req, res) => {
     const db = getDb();
     const stmt = db.prepare('SELECT * FROM gers WHERE id = ?');
     const ger = stmt.get(req.params.id);
-    if (!ger) return res.status(404).json({ message: 'Not found' });
+    if (!ger) return res.status(404).json({ message: 'Олдсонгүй' });
     res.json(ger);
   } catch (err) {
     console.error(err);
@@ -49,7 +49,7 @@ router.get('/:id/bookings', async (req, res) => {
     res.json(bookings);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Серверийн алдаа' });
   }
 });
 
@@ -68,7 +68,7 @@ router.post('/', auth, adminOnly, async (req, res) => {
     res.status(201).json(newGer);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Серверийн алдаа' });
   }
 });
 
@@ -83,11 +83,11 @@ router.put('/:id', auth, adminOnly, async (req, res) => {
       JSON.stringify(req.body.amenities || []), JSON.stringify(req.body.images || []), now, req.params.id
     );
     const updated = db.prepare('SELECT * FROM gers WHERE id = ?').get(req.params.id);
-    if (!updated) return res.status(404).json({ message: 'Not found' });
+    if (!updated) return res.status(404).json({ message: 'Олдсонгүй' });
     res.json(updated);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Серверийн алдаа' });
   }
 });
 
@@ -96,10 +96,10 @@ router.delete('/:id', auth, adminOnly, async (req, res) => {
   try {
     const db = getDb();
     db.prepare('DELETE FROM gers WHERE id = ?').run(req.params.id);
-    res.json({ message: 'Deleted' });
+    res.json({ message: 'Устгагдлаа' });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Серверийн алдаа' });
   }
 });
 

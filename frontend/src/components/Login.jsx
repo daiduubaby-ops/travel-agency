@@ -37,26 +37,26 @@ export default function Login(){
   return (
     <div className="login-page">
       <div className="login-box">
-        <h2>Sign in to Ger Camp</h2>
+        <h2>Ger Camp руу нэвтрэх</h2>
         <form onSubmit={handleSubmit}>
           <label>
-            Email
+            И-мэйл
             <input type="email" value={email} onChange={e=>setEmail(e.target.value)} required />
           </label>
 
           <label>
-            Password
+            Нууц үг
             <input type="password" value={password} onChange={e=>setPassword(e.target.value)} required />
           </label>
 
           {error && <div className="error">{error}</div>}
 
           <div className="form-actions">
-            <button className="btn" type="submit" disabled={loading}>{loading ? 'Signing in...' : 'Sign in'}</button>
+            <button className="btn" type="submit" disabled={loading}>{loading ? 'Нэвтрэж байна...' : 'Нэвтрэх'}</button>
           </div>
         </form>
 
-        <p className="muted">Don't have an account? <a href="/register">Register</a></p>
+        <p className="muted">Дансгүй юу? <a href="/register">Бүртгүүлэх</a></p>
       </div>
     </div>
   )

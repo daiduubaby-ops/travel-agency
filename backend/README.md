@@ -1,14 +1,14 @@
-Backend API for Ger Camp Rental
+Ger Camp түрээсийн Backend API
 
-Setup
+Тохиргоо
 1. cd backend
 2. npm install
-3. copy .env.example to .env and set MONGO_URI and JWT_SECRET
+3. .env.example файлыг .env болгон хуулж, MONGO_URI болон JWT_SECRET-ийг тохируулна
 4. npm run dev
 
-Seeding
+Мэдээллийн үржүүлэх
 - npm run seed
 
-Notes
-- Endpoints: /api/auth, /api/gers, /api/bookings
-- JWT required for protected endpoints
+Тэмдэглэл
+- Эндпоинтууд: /api/auth, /api/gers, /api/bookings
+- Хамгаалалттай эндпоинтуудад JWT шаардлагатай

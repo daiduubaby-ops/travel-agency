@@ -25,7 +25,7 @@ function Calendar({ year, month, disabledDays = [], onSelectDay = () => {}, sele
     <table className="simple-calendar" aria-label={`Calendar for ${month + 1}/${year}`}>
       <caption className="calendar-caption">{monthName} {year}</caption>
       <thead>
-        <tr><th>Su</th><th>Mo</th><th>Tu</th><th>We</th><th>Th</th><th>Fr</th><th>Sa</th></tr>
+        <tr><th>Ня</th><th>Да</th><th>Мя</th><th>Лха</th><th>Пү</th><th>Ба</th><th>Бя</th></tr>
       </thead>
       <tbody>
         {weeks.map((w, i) => (
@@ -65,8 +65,8 @@ export default function Listings(){
 
   // sample inventory: 8 gers at $50 and 5 houses at $70 (selectable)
   const sampleItems = []
-  for(let i=1;i<=8;i++) sampleItems.push({ id:`sample-ger-${i}`, title:`Sample Ger ${i}`, location:'Sample', pricePerNight:50, isSample:true })
-  for(let i=1;i<=5;i++) sampleItems.push({ id:`sample-house-${i}`, title:`Sample House ${i}`, location:'Sample', pricePerNight:70, isSample:true })
+  for(let i=1;i<=8;i++) sampleItems.push({ id:`sample-ger-${i}`, title:`Жишээ гэр ${i}`, location:'Жишээ', pricePerNight:50, isSample:true })
+  for(let i=1;i<=5;i++) sampleItems.push({ id:`sample-house-${i}`, title:`Жишээ байр ${i}`, location:'Жишээ', pricePerNight:70, isSample:true })
 
   function generateSampleBookedDays(count=3){
     const out = []
@@ -315,10 +315,10 @@ export default function Listings(){
 
   return (
     <div className="container">
-      <h2>Listings</h2>
+      <h2>Жагсаалт</h2>
       <div className="listings two-column">
         <div className="gers-list">
-          <h4 style={{margin:'0 0 8px 0'}}>Sample inventory</h4>
+          <h4 style={{margin:'0 0 8px 0'}}>Жишиг сан</h4>
           {sampleItems.map(g => {
             const checked = selectedItems.some(s => s.id === g.id)
             return (
@@ -337,13 +337,13 @@ export default function Listings(){
                 }} />
                 <div className="listing-body" style={{flex:1}}>
                   <h4 style={{margin:'0'}}>{g.title}</h4>
-                  <p style={{margin:'0'}}>{g.location} — ${g.pricePerNight} {g.isSample && <span style={{color:'#6b7280',marginLeft:8,fontSize:12}}>(sample)</span>}</p>
+                  <p style={{margin:'0'}}>{g.location} — ${g.pricePerNight} {g.isSample && <span style={{color:'#6b7280',marginLeft:8,fontSize:12}}>(жишээ)</span>}</p>
                 </div>
               </label>
             )
           })}
 
-          <h4 style={{margin:'16px 0 8px 0'}}>Live listings</h4>
+          <h4 style={{margin:'16px 0 8px 0'}}>Бодит жагсаалт</h4>
           {gers.map(g => {
             const checked = selectedItems.some(s => s.id === g.id)
             return (
@@ -366,13 +366,13 @@ export default function Listings(){
               </label>
             )
           })}
-          {gers.length === 0 && <p>No live listings available.</p>}
+          {gers.length === 0 && <p>Одоогоор бодит жагсаалт алга байна.</p>}
         </div>
 
         <div className="gers-detail">
           {selectedItems.length > 0 ? (
             <>
-              <h3>Selected ({selectedItems.length})</h3>
+              <h3>Сонгосон ({selectedItems.length})</h3>
               <div className="selected-area">
                 <div className="selected-grid">
                 {selectedItems.map(item => {
@@ -386,20 +386,20 @@ export default function Listings(){
                             <h4 style={{margin:'0 0 4px 0'}}>{item.title}</h4>
                             <div style={{color:'#6b7280',fontSize:13}}>{item.location} — ${item.pricePerNight} / night</div>
                           </div>
-                          <div style={{textAlign:'right'}}>
-                            <div style={{fontSize:12,color:'#6b7280'}}>Selected: {sel.length}</div>
-                          </div>
+                            <div style={{textAlign:'right'}}>
+                            <div style={{fontSize:12,color:'#6b7280'}}>Сонгосон: {sel.length}</div>
+                            </div>
                         </div>
 
                         <div style={{maxWidth:280,marginTop:8}}>
                           <div className="calendar-wrapper">
                             <div className="calendar-nav" style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
                               <div>
-                                <button className="btn btn-outline" onClick={prevMonth} aria-label="Previous month">‹</button>
-                                <button className="btn btn-outline" onClick={goToday} style={{marginLeft:8}}>Today</button>
-                                <button className="btn btn-outline" onClick={nextMonth} style={{marginLeft:8}} aria-label="Next month">›</button>
+                                <button className="btn btn-outline" onClick={prevMonth} aria-label="Өмнөх сар">‹</button>
+                                <button className="btn btn-outline" onClick={goToday} style={{marginLeft:8}}>Өнөөдөр</button>
+                                <button className="btn btn-outline" onClick={nextMonth} style={{marginLeft:8}} aria-label="Дараагийн сар">›</button>
                               </div>
-                              <div style={{color:'#6b7280',fontSize:14}}>Item selected: {sel.length}</div>
+                              <div style={{color:'#6b7280',fontSize:14}}>Сонгогдсон: {sel.length}</div>
                             </div>
                             <Calendar
                               year={viewYear}
@@ -413,16 +413,16 @@ export default function Listings(){
                             <div style={{minWidth:120}}>
                               <div style={{display:'flex',alignItems:'center',marginBottom:6}}>
                                 <span style={{display:'inline-block',width:12,height:12,background:'#ef4444',marginRight:8,verticalAlign:'middle',borderRadius:3}}></span>
-                                <span style={{color:'#374151'}}>booked / unavailable</span>
+                                <span style={{color:'#374151'}}>захиалагдсан / боломжгүй</span>
                               </div>
                               <div style={{display:'flex',alignItems:'center'}}>
                                 <span style={{display:'inline-block',width:12,height:12,background:'#10b981',marginRight:8,verticalAlign:'middle',borderRadius:3}}></span>
-                                <span style={{color:'#374151'}}>selected</span>
+                                <span style={{color:'#374151'}}>сонгосон</span>
                               </div>
                             </div>
                             {/* selected dates removed per request */}
                             <div style={{minWidth:120, textAlign:'right'}}>
-                              <strong style={{display:'block',marginBottom:6,color:'#374151'}}>Subtotal</strong>
+                              <strong style={{display:'block',marginBottom:6,color:'#374151'}}>Дэд нийлбэр</strong>
                               <div style={{fontSize:16,fontWeight:700}}>${sel.length * (item.pricePerNight || 0)}</div>
                             </div>
                           </div>
@@ -437,11 +437,11 @@ export default function Listings(){
                 {/* totals rendered below grid so it spans full width */}
                 <div className="selected-footer-wrapper">
                   <div className="selected-footer">
-                    <div style={{color:'#374151'}}>Total nights: <strong>{totals.nights}</strong></div>
-                    <div style={{color:'#374151'}}>Total price: <strong>${totals.price}</strong></div>
+                    <div style={{color:'#374151'}}>Нийт шөнө: <strong>{totals.nights}</strong></div>
+                    <div style={{color:'#374151'}}>Нийт үнэ: <strong>${totals.price}</strong></div>
                     <div>
                       <button className="btn btn-primary" onClick={handleBookSelected} disabled={loading} style={{marginLeft:12}}>
-                        {loading ? 'Booking...' : 'Book Selected'}
+                        {loading ? 'Захиалж байна...' : 'Сонгосон захиалах'}
                       </button>
                     </div>
                   </div>
@@ -450,7 +450,7 @@ export default function Listings(){
               </div>
             </>
           ) : (
-            <p>Select listings on the left to manage availability and booking.</p>
+            <p>Бүх жагсаалтыг баруун тал дахь хэсгээс захиалгаа болон боломжийг удирдана уу.</p>
           )}
         </div>
       </div>

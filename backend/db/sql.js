@@ -81,6 +81,19 @@ async function init() {
     updatedAt TEXT
   );`);
 
+  // programs table stores multi-day program definitions. 'days' is JSON text.
+  db.run(`CREATE TABLE IF NOT EXISTS programs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    time TEXT,
+    location TEXT,
+    price TEXT,
+    age TEXT,
+    days TEXT,
+    createdAt TEXT,
+    updatedAt TEXT
+  );`);
+
   // persist in case created
   persist();
 }

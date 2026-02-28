@@ -35,26 +35,26 @@ export default function Register(){
   return (
     <div className="login-page">
       <div className="login-box">
-        <h2>Create an account</h2>
+        <h2>Данс үүсгэх</h2>
         <form onSubmit={handleSubmit}>
           <label>
-            Name
+            Нэр
             <input value={name} onChange={e=>setName(e.target.value)} required />
           </label>
           <label>
-            Email
+            И-мэйл
             <input type="email" value={email} onChange={e=>setEmail(e.target.value)} required />
           </label>
           <label>
-            Password
+            Нууц үг
             <input type="password" value={password} onChange={e=>setPassword(e.target.value)} required />
           </label>
           {error && <div className="error">{error}</div>}
           <div className="form-actions">
-            <button className="btn" type="submit" disabled={loading}>{loading ? 'Creating...' : 'Create account'}</button>
+            <button className="btn" type="submit" disabled={loading}>{loading ? 'Үүсгэж байна...' : 'Данс үүсгэх'}</button>
           </div>
         </form>
-        <p className="muted">Already have an account? <a href="/login">Sign in</a></p>
+        <p className="muted">Өмнө нь бүртгүүлсэн бол: <a href="/login">Нэвтрэх</a></p>
       </div>
     </div>
   )

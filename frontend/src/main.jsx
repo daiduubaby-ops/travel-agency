@@ -10,6 +10,13 @@ import Listings from './components/Listings'
 import Booking from './components/Booking'
 import Dashboard from './components/Dashboard'
 import BookedListings from './components/BookedListings'
+import Rules from './components/Rules'
+import News from './components/News'
+import Programs from './components/Programs'
+import Profile from './components/Profile'
+import AdminPrograms from './components/AdminPrograms'
+
+
 
 function App(){
   // Simple client-side routing using location.pathname
@@ -21,9 +28,17 @@ function App(){
   if(path === '/dashboard') View = Dashboard
   if(path === '/listings') View = Listings
   if(path === '/booked') View = BookedListings
+  if(path === '/rules') View = Rules
+  if(path === '/news') View = News
+  // support both the programs list and individual program detail routes like /programs/1
+  if(path === '/programs' || path.startsWith('/programs')) View = Programs
+  if(path === '/profile') View = Profile
+  if(path === '/admin/programs' || path.startsWith('/admin/programs')) View = AdminPrograms
   // booking page supports query param ?id=123 or path starting with /book
   // but exclude the /booked page which should show BookedListings
   if(path.startsWith('/book') && path !== '/booked') View = Booking
+// Favorites page removed from navigation; keep component for now if needed
+  
   return (
     <>
       <Nav />
