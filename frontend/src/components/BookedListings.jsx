@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import formatMNT from '../utils/formatCurrency'
 
 export default function BookedListings(){
   const [bookings, setBookings] = useState([])
@@ -88,7 +89,7 @@ export default function BookedListings(){
             <div key={b.id} className="listing small">
               <div className="listing-body">
                 <h4 style={{margin:'0 0 4px 0'}}>{b.ger_title}</h4>
-                <div style={{color:'#6b7280',fontSize:13}}>{b.ger_location} — ${b.totalPrice} — <strong>{b.status}</strong></div>
+                <div style={{color:'#6b7280',fontSize:13}}>{b.ger_location} — {formatMNT(b.totalPrice)} — <strong>{b.status}</strong></div>
                 <div style={{fontSize:13,marginTop:6}}>Эхлэх: {new Date(b.checkInDate).toISOString().slice(0,10)} — Дуусах: {new Date(b.checkOutDate).toISOString().slice(0,10)}</div>
                 <div style={{marginTop:6}}><a href={`/booking?id=${b.gerId}`}>Жагсаалтыг үзэх</a></div>
                 {(String(b.id).startsWith('sample') || String(b.gerId).startsWith('sample') || b.status === 'confirmed') && (

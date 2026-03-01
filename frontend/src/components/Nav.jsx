@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import './Nav.css'
 
 export default function Nav(){
@@ -54,9 +54,7 @@ export default function Nav(){
           <a href="/listings"><span className="nav-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" width="18" height="18" strokeWidth="1.5" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7h18M3 12h18M3 17h18"/></svg>
           </span>Гэр захиалах</a>
-          <a href="/host"><span className="nav-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="18" height="18" strokeWidth="1.5" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-          </span>Гэр хостлох</a>
+          
           <a href="/news"><span className="nav-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" width="18" height="18" strokeWidth="1.5" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15V6a2 2 0 0 0-2-2H7L3 6v9a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2z"/><path d="M7 10h8M7 14h5"/></svg>
           </span>Мэдээ мэдээлэл</a>
@@ -74,9 +72,28 @@ export default function Nav(){
               <a href="/dashboard"><span className="nav-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" width="18" height="18" strokeWidth="1.5" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
               </span>Дашбоард</a>
-              <a href="/profile"><span className="nav-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" width="18" height="18" strokeWidth="1.5" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-3-3.87"/><path d="M4 21v-2a4 4 0 0 1 3-3.87"/><circle cx="12" cy="7" r="4"/></svg>
-              </span>Профайл</a>
+          {user ? (
+            <div className="profile-menu-wrapper" style={{position:'relative'}}>
+              <button
+                className="profile-btn"
+                onClick={(e)=>{
+                  e.preventDefault();
+                  const ev = new CustomEvent('toggleProfileMenu')
+                  window.dispatchEvent(ev)
+                }}
+                style={{display:'flex',alignItems:'center',gap:8,background:'transparent',border:'none',cursor:'pointer'}}
+              >
+                <span className="nav-avatar" aria-hidden="true" style={{width:26,height:26,borderRadius:9999,background:'#f1f3f5',display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:12,color:'#374151'}}>
+                  {user.name?user.name.charAt(0).toUpperCase():'U'}
+                </span>
+                <span style={{fontSize:14,color:'#111'}}>{user.name}</span>
+              </button>
+            </div>
+          ) : (
+            <a href="/profile"><span className="nav-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="18" height="18" strokeWidth="1.5" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-3-3.87"/><path d="M4 21v-2a4 4 0 0 1 3-3.87"/><circle cx="12" cy="7" r="4"/></svg>
+            </span>Профайл</a>
+          )}
             </>
           )}
 

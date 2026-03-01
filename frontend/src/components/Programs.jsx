@@ -1,4 +1,5 @@
 import React from 'react'
+import formatMNT from '../utils/formatCurrency'
 import './Landing.css'
 
 const defaultPrograms = [
@@ -41,6 +42,18 @@ export default function Programs(){
     return () => { mounted = false }
   }, [])
   const programs = programsState
+  // helper to display price strings; backend may send '-' or localized strings
+  function displayPrice(price){
+    if(!price || price === '-' || String(price).trim() === '') return '—'
+    try{
+      // strip non-numeric characters (keep dot and minus) and parse
+      const cleaned = String(price).replace(/[^0-9.-]/g, '')
+      const n = Number(cleaned)
+      if(Number.isFinite(n)) return formatMNT(n)
+    }catch(e){/* ignore */}
+    // fallback: return original string
+    return String(price)
+  }
   // check for a program id in the URL so we can show a detail view
   const params = new URLSearchParams(window.location.search)
   let id = params.get('id')
@@ -140,7 +153,7 @@ export default function Programs(){
                   <div><strong>Цаг:</strong> {p.time}</div>
                   <div><strong>Байршил:</strong> {p.location}</div>
                 </div>
-                <p className="program-extra">Нас: {p.age} • Үнэ: {p.price}</p>
+                <p className="program-extra">Нас: {p.age} • Үнэ: {displayPrice(p.price)}</p>
                 <div className="program-actions">
                   <a className="btn btn-outline" href={`/programs/${p.id}`}>Дэлгэрэнгүй</a>
                   <button className="btn btn-primary" onClick={() => startBooking(p)}>Захиалах</button>

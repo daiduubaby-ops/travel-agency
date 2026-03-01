@@ -69,54 +69,71 @@ export default function Profile(){
     <main style={{padding:24}}>
       <h1>Profile</h1>
 
-      {/* Centered card layout (left card removed) */}
       <div style={{display:'flex', justifyContent:'center'}}>
-        <div style={{width:420, border:'1px solid #e9ecef', borderRadius:10, padding:20, boxShadow:'0 6px 20px rgba(0,0,0,0.06)', background:'#fff'}}>
-          <div style={{display:'flex', gap:12, alignItems:'center'}}>
-            <div style={{width:72, height:72, borderRadius:9999, background:'#f1f3f5', display:'flex', alignItems:'center', justifyContent:'center', fontSize:24, color:'#6c757d'}}>
+        <div style={{width:820, border:'1px solid #e9ecef', borderRadius:10, padding:20, boxShadow:'0 6px 20px rgba(0,0,0,0.06)', background:'#fff', display:'flex', gap:24}}>
+          {/* Left: avatar and summary */}
+          <div style={{width:260, textAlign:'center'}}>
+            <div style={{width:120, height:120, borderRadius:9999, background:'#f1f3f5', display:'flex', alignItems:'center', justifyContent:'center', fontSize:48, color:'#6c757d', margin:'0 auto'}}>
               {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
             </div>
-            <div style={{flex:1}}>
-              <h2 style={{margin:'0 0 6px 0'}}>{user.name}</h2>
-              <div style={{color:'#6c757d', fontSize:14}}>{user.email}</div>
+            <h2 style={{marginTop:12, marginBottom:6}}>{user.name}</h2>
+            <div style={{color:'#6c757d', fontSize:14}}>{user.email}</div>
+            <div style={{marginTop:12, textAlign:'left'}}>
+              <p style={{margin:6}}><strong>Утас:</strong> {user.phone || '—'}</p>
+              <p style={{margin:6}}><strong>Хаяг:</strong> {user.address || '—'}</p>
             </div>
-            <div>
-              {!editing && <button className="btn" onClick={() => { setEditing(true); setSaveMessage('') }}>Засах</button>}
+            <div style={{marginTop:12}}>
+              <button className="btn" onClick={() => { setEditing(true); setSaveMessage('') }}>Профайл засах</button>
             </div>
           </div>
 
-          {saveMessage && (
-            <div style={{marginTop:12, padding:8, borderRadius:6, background:'#e6ffed', color:'#0b8457'}}>{saveMessage}</div>
-          )}
+          {/* Right: details / edit form */}
+          <div style={{flex:1}}>
+            {saveMessage && (
+              <div style={{marginTop:0, padding:8, borderRadius:6, background:'#e6ffed', color:'#0b8457'}}>{saveMessage}</div>
+            )}
 
-          {editing && (
-            <div style={{marginTop:16}}>
-              <label style={{display:'block', marginBottom:8}}>
-                Нэр
-                <input name="name" value={form.name} onChange={handleChange} style={{width:'100%', padding:10, marginTop:6, borderRadius:6, border:'1px solid #e6e6e6'}} />
-              </label>
-              <label style={{display:'block', marginBottom:8}}>
-                И-мэйл
-                <input name="email" value={form.email} onChange={handleChange} style={{width:'100%', padding:10, marginTop:6, borderRadius:6, border:'1px solid #e6e6e6'}} />
-              </label>
-              <label style={{display:'block', marginBottom:8}}>
-                Утас
-                <input name="phone" value={form.phone} onChange={handleChange} style={{width:'100%', padding:10, marginTop:6, borderRadius:6, border:'1px solid #e6e6e6'}} />
-              </label>
-              <label style={{display:'block', marginBottom:8}}>
-                Хаяг
-                <input name="address" value={form.address} onChange={handleChange} style={{width:'100%', padding:10, marginTop:6, borderRadius:6, border:'1px solid #e6e6e6'}} />
-              </label>
-              <label style={{display:'block', marginBottom:8}}>
-                Тухай (bio)
-                <textarea name="bio" value={form.bio} onChange={handleChange} style={{width:'100%', padding:10, marginTop:6, borderRadius:6, border:'1px solid #e6e6e6'}} />
-              </label>
-              <div style={{display:'flex', justifyContent:'flex-end', gap:8, marginTop:8}}>
-                <button className="btn btn-ghost" onClick={() => setEditing(false)}>Болих</button>
-                <button className="btn" onClick={handleSave}>Хадгалах</button>
+            {!editing && (
+              <div>
+                <h3>Таны тухай</h3>
+                <p style={{whiteSpace:'pre-wrap', color:'#374151'}}>{user.bio || 'Тодорхойлолт оруулаагүй байна.'}</p>
+                <div style={{marginTop:12}}>
+                  <button className="btn btn-ghost" onClick={() => handleRemoveField('phone')}>Утас устгах</button>
+                  <button className="btn btn-ghost" style={{marginLeft:8}} onClick={() => handleRemoveField('address')}>Хаяг устгах</button>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+
+            {editing && (
+              <div>
+                <h3>Мэдээлэл засах</h3>
+                <label style={{display:'block', marginBottom:8}}>
+                  Нэр
+                  <input name="name" value={form.name} onChange={handleChange} style={{width:'100%', padding:10, marginTop:6, borderRadius:6, border:'1px solid #e6e6e6'}} />
+                </label>
+                <label style={{display:'block', marginBottom:8}}>
+                  И-мэйл
+                  <input name="email" value={form.email} onChange={handleChange} style={{width:'100%', padding:10, marginTop:6, borderRadius:6, border:'1px solid #e6e6e6'}} />
+                </label>
+                <label style={{display:'block', marginBottom:8}}>
+                  Утас
+                  <input name="phone" value={form.phone} onChange={handleChange} style={{width:'100%', padding:10, marginTop:6, borderRadius:6, border:'1px solid #e6e6e6'}} />
+                </label>
+                <label style={{display:'block', marginBottom:8}}>
+                  Хаяг
+                  <input name="address" value={form.address} onChange={handleChange} style={{width:'100%', padding:10, marginTop:6, borderRadius:6, border:'1px solid #e6e6e6'}} />
+                </label>
+                <label style={{display:'block', marginBottom:8}}>
+                  Тухай (bio)
+                  <textarea name="bio" value={form.bio} onChange={handleChange} style={{width:'100%', padding:10, marginTop:6, borderRadius:6, border:'1px solid #e6e6e6'}} />
+                </label>
+                <div style={{display:'flex', justifyContent:'flex-end', gap:8, marginTop:8}}>
+                  <button className="btn btn-ghost" onClick={() => setEditing(false)}>Болих</button>
+                  <button className="btn" onClick={handleSave}>Хадгалах</button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </main>

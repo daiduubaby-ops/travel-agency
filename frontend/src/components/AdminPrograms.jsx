@@ -48,7 +48,7 @@ export default function AdminPrograms(){
   function handleEdit(p){ setEditing(p.id); setForm({ title:p.title||'', time:p.time||'', location:p.location||'', price:p.price||'', age:p.age||'', days: p.days || [] }); setMessage('') }
 
   async function handleDelete(id){
-    if(!confirm('Энэхүү хөтөлбөрийг устгах уу?')) return
+    if(!confirm('Энэ хөтөлбөрийг устгах уу?')) return
     setLoading(true)
     try{
       const res = await api(`/${id}`, { method: 'DELETE' })
@@ -108,7 +108,7 @@ export default function AdminPrograms(){
           <h3>Бүх хөтөлбөрүүд</h3>
           <table style={{width:'100%',borderCollapse:'collapse'}}>
             <thead>
-              <tr style={{textAlign:'left'}}><th>Id</th><th>Нэр</th><th>Цаг</th><th>Байршил</th><th>Үнэ</th><th>Нас</th><th></th></tr>
+              <tr style={{textAlign:'left'}}><th>Id</th><th>Нэр</th><th>Хугацаа</th><th>Байршил</th><th>Үнэ</th><th>Хүний тоо</th><th></th></tr>
             </thead>
             <tbody>
               {programs.map(p => (
@@ -133,13 +133,13 @@ export default function AdminPrograms(){
           <h3>{editing ? 'Хөтөлбөр засварлах' : 'Шинэ хөтөлбөр нэмэх'}</h3>
           <form onSubmit={editing ? handleUpdate : handleCreate}>
             <label style={{display:'block',marginBottom:8}}>Нэр<input name="title" value={form.title} onChange={handleChange} required /></label>
-            <label style={{display:'block',marginBottom:8}}>Цаг<input name="time" value={form.time} onChange={handleChange} /></label>
+            <label style={{display:'block',marginBottom:8}}>Хугацаа<input name="time" value={form.time} onChange={handleChange} /></label>
             <label style={{display:'block',marginBottom:8}}>Байршил<input name="location" value={form.location} onChange={handleChange} /></label>
             <label style={{display:'block',marginBottom:8}}>Үнэ<input name="price" value={form.price} onChange={handleChange} /></label>
-            <label style={{display:'block',marginBottom:8}}>Нас<input name="age" value={form.age} onChange={handleChange} /></label>
+            <label style={{display:'block',marginBottom:8}}>Хүний тоо<input name="people" value={form.people} onChange={handleChange} /></label>
 
             <div style={{marginTop:12}}>
-              <h4>Өдөрүүд / маршрут</h4>
+              <h4>Өдрүүд / маршрут</h4>
               {(form.days||[]).map((d,i) => (
                 <div key={i} style={{border:'1px solid #eee',padding:8,borderRadius:8,marginBottom:8}}>
                   <div style={{display:'flex',gap:8}}>

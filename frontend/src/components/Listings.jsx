@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import './Landing.css'
+import formatMNT from '../utils/formatCurrency'
 
 // Simple calendar rendering helper
 function Calendar({ year, month, disabledDays = [], onSelectDay = () => {}, selectedIsos = [] }){
@@ -38,7 +39,7 @@ function Calendar({ year, month, disabledDays = [], onSelectDay = () => {}, sele
                 role={c ? 'button' : undefined}
                 tabIndex={c ? 0 : -1}
                 onKeyDown={(e) => { if(c && (e.key === 'Enter' || e.key === ' ')) onSelectDay(c.iso) }}
-                title={c ? `${c.iso}${c.disabled ? ' (booked)' : ''}` : undefined}
+                title={c ? `${c.iso}${c.disabled ? ' (Захиалсан)' : ''}` : undefined}
               >
                 {c ? c.day : ''}
               </td>
@@ -63,10 +64,10 @@ export default function Listings(){
   const [viewYear, setViewYear] = useState(now.getFullYear())
   const [viewMonth, setViewMonth] = useState(now.getMonth())
 
-  // sample inventory: 8 gers at $50 and 5 houses at $70 (selectable)
+  // sample inventory: 8 gers at ₮50,000 and 5 houses at ₮70,000 (selectable)
   const sampleItems = []
-  for(let i=1;i<=8;i++) sampleItems.push({ id:`sample-ger-${i}`, title:`Жишээ гэр ${i}`, location:'Жишээ', pricePerNight:50, isSample:true })
-  for(let i=1;i<=5;i++) sampleItems.push({ id:`sample-house-${i}`, title:`Жишээ байр ${i}`, location:'Жишээ', pricePerNight:70, isSample:true })
+  for(let i=1;i<=8;i++) sampleItems.push({ id:`sample-ger-${i}`, title:`Цомцог гэр ${i}`, location:'Гэр', pricePerNight:250000, isSample:true })
+  for(let i=1;i<=5;i++) sampleItems.push({ id:`sample-house-${i}`, title:`Шовгор байшин ${i}`, location:'Байшин', pricePerNight:270000, isSample:true })
 
   function generateSampleBookedDays(count=3){
     const out = []
@@ -315,10 +316,10 @@ export default function Listings(){
 
   return (
     <div className="container">
-      <h2>Жагсаалт</h2>
+      <h2>Байр сонгох</h2>
       <div className="listings two-column">
         <div className="gers-list">
-          <h4 style={{margin:'0 0 8px 0'}}>Жишиг сан</h4>
+          <h4 style={{margin:'0 0 8px 0'}}></h4>
           {sampleItems.map(g => {
             const checked = selectedItems.some(s => s.id === g.id)
             return (
@@ -337,13 +338,13 @@ export default function Listings(){
                 }} />
                 <div className="listing-body" style={{flex:1}}>
                   <h4 style={{margin:'0'}}>{g.title}</h4>
-                  <p style={{margin:'0'}}>{g.location} — ${g.pricePerNight} {g.isSample && <span style={{color:'#6b7280',marginLeft:8,fontSize:12}}>(жишээ)</span>}</p>
+                  <p style={{margin:'0'}}>{g.location} — {formatMNT(g.pricePerNight)} {g.isSample && <span style={{color:'#6b7280',marginLeft:8,fontSize:12}}></span>}</p>
                 </div>
               </label>
             )
           })}
 
-          <h4 style={{margin:'16px 0 8px 0'}}>Бодит жагсаалт</h4>
+          <h4 style={{margin:'16px 0 8px 0'}}>Нэмэлт (VIP)</h4>
           {gers.map(g => {
             const checked = selectedItems.some(s => s.id === g.id)
             return (
@@ -361,7 +362,7 @@ export default function Listings(){
                 }} />
                 <div className="listing-body" style={{flex:1}}>
                   <h4 style={{margin:'0'}}>{g.title}</h4>
-                  <p style={{margin:'0'}}>{g.location} — ${g.pricePerNight}</p>
+                  <p style={{margin:'0'}}>{g.location} — {formatMNT(g.pricePerNight)}</p>
                 </div>
               </label>
             )
@@ -384,7 +385,7 @@ export default function Listings(){
                         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
                           <div>
                             <h4 style={{margin:'0 0 4px 0'}}>{item.title}</h4>
-                            <div style={{color:'#6b7280',fontSize:13}}>{item.location} — ${item.pricePerNight} / night</div>
+                            <div style={{color:'#6b7280',fontSize:13}}>{item.location} — {formatMNT(item.pricePerNight)} / шөнө</div>
                           </div>
                             <div style={{textAlign:'right'}}>
                             <div style={{fontSize:12,color:'#6b7280'}}>Сонгосон: {sel.length}</div>
@@ -399,7 +400,7 @@ export default function Listings(){
                                 <button className="btn btn-outline" onClick={goToday} style={{marginLeft:8}}>Өнөөдөр</button>
                                 <button className="btn btn-outline" onClick={nextMonth} style={{marginLeft:8}} aria-label="Дараагийн сар">›</button>
                               </div>
-                              <div style={{color:'#6b7280',fontSize:14}}>Сонгогдсон: {sel.length}</div>
+                              <div style={{color:'#6b7280',fontSize:14}}>Сонгосон: {sel.length}</div>
                             </div>
                             <Calendar
                               year={viewYear}
@@ -413,7 +414,7 @@ export default function Listings(){
                             <div style={{minWidth:120}}>
                               <div style={{display:'flex',alignItems:'center',marginBottom:6}}>
                                 <span style={{display:'inline-block',width:12,height:12,background:'#ef4444',marginRight:8,verticalAlign:'middle',borderRadius:3}}></span>
-                                <span style={{color:'#374151'}}>захиалагдсан / боломжгүй</span>
+                                <span style={{color:'#374151'}}>захиалга дүүрсэн</span>
                               </div>
                               <div style={{display:'flex',alignItems:'center'}}>
                                 <span style={{display:'inline-block',width:12,height:12,background:'#10b981',marginRight:8,verticalAlign:'middle',borderRadius:3}}></span>
@@ -422,8 +423,8 @@ export default function Listings(){
                             </div>
                             {/* selected dates removed per request */}
                             <div style={{minWidth:120, textAlign:'right'}}>
-                              <strong style={{display:'block',marginBottom:6,color:'#374151'}}>Дэд нийлбэр</strong>
-                              <div style={{fontSize:16,fontWeight:700}}>${sel.length * (item.pricePerNight || 0)}</div>
+                              <strong style={{display:'block',marginBottom:6,color:'#374151'}}>Нийт төлбөр</strong>
+                              <div style={{fontSize:16,fontWeight:700}}>{formatMNT(sel.length * (item.pricePerNight || 0))}</div>
                             </div>
                           </div>
                         </div>
@@ -437,11 +438,11 @@ export default function Listings(){
                 {/* totals rendered below grid so it spans full width */}
                 <div className="selected-footer-wrapper">
                   <div className="selected-footer">
-                    <div style={{color:'#374151'}}>Нийт шөнө: <strong>{totals.nights}</strong></div>
-                    <div style={{color:'#374151'}}>Нийт үнэ: <strong>${totals.price}</strong></div>
+                    <div style={{color:'#374151'}}>Нийт хоног: <strong>{totals.nights}</strong></div>
+                    <div style={{color:'#374151'}}>Нийт үнэ: <strong>{formatMNT(totals.price)}</strong></div>
                     <div>
                       <button className="btn btn-primary" onClick={handleBookSelected} disabled={loading} style={{marginLeft:12}}>
-                        {loading ? 'Захиалж байна...' : 'Сонгосон захиалах'}
+                        {loading ? 'Захиалж байна...' : 'Захиалга баталгаажуулах'}
                       </button>
                     </div>
                   </div>
@@ -450,7 +451,7 @@ export default function Listings(){
               </div>
             </>
           ) : (
-            <p>Бүх жагсаалтыг баруун тал дахь хэсгээс захиалгаа болон боломжийг удирдана уу.</p>
+            <p>Та өөрт тохирох амрах байраа сонгоод захиалгаа баталгаажуулна уу..</p>
           )}
         </div>
       </div>

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import formatMNT from '../utils/formatCurrency'
 
 export default function Booking(){
   const params = new URLSearchParams(window.location.search)
@@ -98,7 +99,7 @@ export default function Booking(){
           <div className="listing-img" />
           <div className="listing-body">
             <h3>{ger.title}</h3>
-            <p>{ger.location} — ${ger.pricePerNight} / шөнө</p>
+            <p>{ger.location} — {formatMNT(ger.pricePerNight)} / шөнө</p>
           </div>
         </div>
       )}
