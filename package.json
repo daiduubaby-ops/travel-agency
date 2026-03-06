@@ -1,0 +1,8 @@
+{
+  "name": "ger-camp-root",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "start start-dev.cmd"
+  }
+}

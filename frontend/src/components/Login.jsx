@@ -21,10 +21,10 @@ export default function Login(){
       if(!res.ok) {
         setError(data.message || 'Login failed')
       } else {
-        // store token and redirect
+        // store token and redirect to Home
         if(data.token) localStorage.setItem('token', data.token)
         if(data.user) localStorage.setItem('user', JSON.stringify(data.user))
-        window.location.href = '/listings'
+        window.location.href = '/'
       }
     }catch(err){
       console.error(err)
@@ -37,7 +37,7 @@ export default function Login(){
   return (
     <div className="login-page">
       <div className="login-box">
-        <h2>Ger Camp руу нэвтрэх</h2>
+        <h2>Нэвтрэх</h2>
         <form onSubmit={handleSubmit}>
           <label>
             И-мэйл
@@ -56,7 +56,7 @@ export default function Login(){
           </div>
         </form>
 
-        <p className="muted">Дансгүй юу? <a href="/register">Бүртгүүлэх</a></p>
+        <p className="muted">Та бүртгэлгүй юу? <a href="/register">Бүртгүүлэх</a></p>
       </div>
     </div>
   )

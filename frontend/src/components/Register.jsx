@@ -24,7 +24,8 @@ export default function Register(){
       } else {
         if(data.token) localStorage.setItem('token', data.token)
         if(data.user) localStorage.setItem('user', JSON.stringify(data.user))
-        window.location.href = '/listings'
+        // after register, redirect to home (not listings)
+        window.location.href = '/'
       }
     }catch(err){
       console.error(err)
@@ -35,7 +36,7 @@ export default function Register(){
   return (
     <div className="login-page">
       <div className="login-box">
-        <h2>Данс үүсгэх</h2>
+        <h2>Бүртгүүлэх</h2>
         <form onSubmit={handleSubmit}>
           <label>
             Нэр
@@ -51,7 +52,7 @@ export default function Register(){
           </label>
           {error && <div className="error">{error}</div>}
           <div className="form-actions">
-            <button className="btn" type="submit" disabled={loading}>{loading ? 'Үүсгэж байна...' : 'Данс үүсгэх'}</button>
+            <button className="btn" type="submit" disabled={loading}>{loading ? 'Үүсгэж байна...' : 'Бүртгүүлэх'}</button>
           </div>
         </form>
         <p className="muted">Өмнө нь бүртгүүлсэн бол: <a href="/login">Нэвтрэх</a></p>

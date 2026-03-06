@@ -5,6 +5,7 @@ export default function BookedListings(){
   const [bookings, setBookings] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [justBooked, setJustBooked] = useState('')
 
   async function handleCancel(booking){
     setError('')
@@ -37,6 +38,19 @@ export default function BookedListings(){
   }
 
   useEffect(() => {
+    // detect success query param when arriving from Programs
+    try{
+      const params = new URLSearchParams(window.location.search)
+      if(params.get('success')){
+        const added = params.get('added')
+        setJustBooked(added || '1')
+        // remove query params from URL without reloading
+        const url = new URL(window.location.href)
+        url.search = ''
+        window.history.replaceState({}, document.title, url.toString())
+      }
+    }catch(e){/* ignore */}
+
     async function load(){
       setLoading(true)
       setError('')
@@ -83,6 +97,9 @@ export default function BookedListings(){
       {loading && <p>Уншиж байна…</p>}
       {error && <p style={{color:'red'}}>{error}</p>}
       {!loading && bookings && bookings.length === 0 && <p>Танд ямар ч захиалга байхгүй байна.</p>}
+      {justBooked && (
+        <p style={{color:'green',background:'#ecfdf5',padding:8,borderRadius:6}}>Захиалга амжилттай нэмэгдлээ.</p>
+      )}
       {!loading && bookings && bookings.length > 0 && (
         <div style={{display:'grid',gap:12}}>
           {bookings.map(b => (
@@ -92,7 +109,7 @@ export default function BookedListings(){
                 <div style={{color:'#6b7280',fontSize:13}}>{b.ger_location} — {formatMNT(b.totalPrice)} — <strong>{b.status}</strong></div>
                 <div style={{fontSize:13,marginTop:6}}>Эхлэх: {new Date(b.checkInDate).toISOString().slice(0,10)} — Дуусах: {new Date(b.checkOutDate).toISOString().slice(0,10)}</div>
                 <div style={{marginTop:6}}><a href={`/booking?id=${b.gerId}`}>Жагсаалтыг үзэх</a></div>
-                {(String(b.id).startsWith('sample') || String(b.gerId).startsWith('sample') || b.status === 'confirmed') && (
+                {(String(b.id).startsWith('sample') || String(b.gerId).startsWith('sample') || b.status === 'амжилттай') && (
                   <div style={{marginTop:8}}>
                     <button className="btn" onClick={() => handleCancel(b)}>{String(b.id).startsWith('sample') || String(b.gerId).startsWith('sample') ? 'Цуцлах' : 'Cancel booking'}</button>
                   </div>

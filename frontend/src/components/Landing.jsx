@@ -7,6 +7,7 @@ const Programs = React.lazy(() => import('./Programs'))
 export default function Landing(){
   // allow local image previews for the three example listings
   const [images, setImages] = useState([null, null, null])
+  const [hero, setHero] = useState(null)
 
   useEffect(() => {
     // cleanup object URLs on unmount
@@ -16,6 +17,22 @@ export default function Landing(){
       })
     }
   }, [images])
+
+  useEffect(() => {
+    // fetch server-provided hero image if available
+    let mounted = true
+    async function loadHero(){
+      try{
+        const res = await fetch('/public/home-hero.jpg')
+        if(!res.ok) return
+        // we can directly use the public path (same origin) or createObjectURL
+        if(!mounted) return
+        setHero('/public/home-hero.jpg')
+      }catch(e){ /* ignore */ }
+    }
+    loadHero()
+    return () => { mounted = false }
+  }, [])
 
   const handleImageChange = (index, e) => {
     const file = e.target.files && e.target.files[0]
@@ -31,7 +48,7 @@ export default function Landing(){
 
   return (
     <div className="landing">
-      <header className="hero">
+      <header className="hero" style={hero ? { backgroundImage: `url(${hero})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}>
         {/* Decorative Mongolian landscape illustration (pure SVG) */}
         <svg className="hero-illustration" viewBox="0 0 1200 420" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
           <defs>
@@ -75,7 +92,7 @@ export default function Landing(){
 
         </svg>
 
-        <div className="hero-inner">
+          <div className="hero-inner">
           <h1>Тал нутгийн түүхийг туулж, гэрийн тооноор оддыг ширт</h1>
           <p className="lead">Улаан гал, уудам тал, уламжлалт тав тух.
 Аяллаа өнөөдөр сонго, гэртээ амар — Монголын аялал энд эхэлнэ!</p>
@@ -196,7 +213,7 @@ export default function Landing(){
 
       <footer className="site-footer">
         <div className="container">
-          <p>© {new Date().getFullYear()} Гэр Кэмп — Хайртайгаар бүтээгдсэн</p>
+          <p>© {new Date().getFullYear()} Гэр Кэмп </p>
         </div>
       </footer>
     </div>

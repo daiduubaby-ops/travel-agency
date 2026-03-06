@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react'
 import './Dashboard.css'
-import formatMNT from '../utils/formatCurrency'
 
 export default function Dashboard(){
   const user = (() => { try { return JSON.parse(localStorage.getItem('user')) } catch { return null } })()
@@ -59,7 +58,7 @@ export default function Dashboard(){
         <h2>{user.name} - таны дашбоард</h2>
         <p>И-мэйл: {user.email}</p>
         {user.isAdmin && (
-          <p><a href="/admin/programs" className="btn">Админ: Өдрийн хөтөлбөрүүдийг удирдах</a></p>
+          <p><a href="/admin/programs" className="btn">Админ: Аяллын хөтөлбөрийг удирдах</a></p>
         )}
         <section>
           <h3>Таны захиалгууд</h3>
@@ -72,7 +71,7 @@ export default function Dashboard(){
                 <div key={b.id} className="listing small" style={{marginBottom:8}}>
                   <div className="listing-body">
                     <h4 style={{margin:'0 0 4px 0'}}>{b.ger_title}</h4>
-                    <div style={{color:'#6b7280',fontSize:13}}>{b.ger_location} — {formatMNT(b.totalPrice)} — <strong>{b.status}</strong></div>
+                    <div style={{color:'#6b7280',fontSize:13}}>{b.ger_location} — ${b.totalPrice} — <strong>{b.status}</strong></div>
                     <div style={{fontSize:13,marginTop:6}}>From {new Date(b.checkInDate).toISOString().slice(0,10)} to {new Date(b.checkOutDate).toISOString().slice(0,10)}</div>
                     <div style={{marginTop:6}}><a href={`/booking?id=${b.gerId}`}>View listing</a></div>
                   </div>

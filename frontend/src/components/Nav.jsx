@@ -60,7 +60,7 @@ export default function Nav(){
           </span>Мэдээ мэдээлэл</a>
           <a href="/programs"><span className="nav-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" width="18" height="18" strokeWidth="1.5" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-          </span>Өдрийн хөтөлбөрүүд</a>
+          </span>Аяллын хөтөлбөр</a>
           <a href="/rules"><span className="nav-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" width="18" height="18" strokeWidth="1.5" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M3 5h18M7 9h10M10 13h4"/></svg>
           </span>Аяллын журам</a>
@@ -73,22 +73,33 @@ export default function Nav(){
                 <svg viewBox="0 0 24 24" width="18" height="18" strokeWidth="1.5" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
               </span>Дашбоард</a>
           {user ? (
-            <div className="profile-menu-wrapper" style={{position:'relative'}}>
-              <button
-                className="profile-btn"
-                onClick={(e)=>{
-                  e.preventDefault();
-                  const ev = new CustomEvent('toggleProfileMenu')
-                  window.dispatchEvent(ev)
-                }}
-                style={{display:'flex',alignItems:'center',gap:8,background:'transparent',border:'none',cursor:'pointer'}}
-              >
-                <span className="nav-avatar" aria-hidden="true" style={{width:26,height:26,borderRadius:9999,background:'#f1f3f5',display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:12,color:'#374151'}}>
-                  {user.name?user.name.charAt(0).toUpperCase():'U'}
-                </span>
-                <span style={{fontSize:14,color:'#111'}}>{user.name}</span>
-              </button>
-            </div>
+            <a href="/profile" className="profile-link" style={{display:'flex',alignItems:'center',gap:8,textDecoration:'none'}}>
+                <label style={{display:'inline-block',position:'relative'}}>
+                  <input type="file" accept="image/*" style={{display:'none'}} onChange={async (e)=>{
+                    const f = e.target.files && e.target.files[0];
+                    if(!f) return;
+                    try{
+                      const fd = new FormData(); fd.append('image', f);
+                      const token = localStorage.getItem('token');
+                      const res = await fetch((import.meta.env?.VITE_API_BASE||'') + '/api/upload/avatar', { method: 'POST', body: fd, headers: token?{ Authorization: `Bearer ${token}` }:{}})
+                      const data = await res.json();
+                      if(res.ok){
+                        // update local user in localStorage so UI updates across the app
+                        const u = JSON.parse(localStorage.getItem('user')||'null') || {};
+                        u.avatar = data.user.avatar;
+                        localStorage.setItem('user', JSON.stringify(u));
+                        window.dispatchEvent(new StorageEvent('storage', { key: 'user', newValue: JSON.stringify(u) }));
+                      } else {
+                        alert(data.message || 'Upload failed')
+                      }
+                    }catch(err){
+                      console.error(err); alert('Upload error')
+                    }
+                  }} />
+                  <img src={user.avatar||''} alt={user.name||'U'} onError={(e)=>{e.target.onerror=null;e.target.src=''}} style={{width:26,height:26,borderRadius:9999,background:'#f1f3f5',display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:12,color:'#374151',objectFit:'cover'}}/>
+                </label>
+              <span style={{fontSize:14,color:'#111'}}>{user.name}</span>
+            </a>
           ) : (
             <a href="/profile"><span className="nav-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" width="18" height="18" strokeWidth="1.5" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-3-3.87"/><path d="M4 21v-2a4 4 0 0 1 3-3.87"/><circle cx="12" cy="7" r="4"/></svg>
@@ -111,19 +122,7 @@ export default function Nav(){
           )}
         </div>
 
-        {/* Quick action icons in top-right: Favorites, Cart, Profile */}
-        <div className="quick-actions" aria-hidden="false">
-
-          <a href="/cart" className="action-item" title="Cart">
-            <svg viewBox="0 0 24 24" width="20" height="20" strokeWidth="1.5" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M6 6h15l-1.5 9h-12L4 3H2"/><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg>
-            <span className="label">Cart</span>
-          </a>
-
-          <a href="/profile" className="action-item" title="Profile">
-            <svg viewBox="0 0 24 24" width="20" height="20" strokeWidth="1.5" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-3-3.87"/><path d="M4 21v-2a4 4 0 0 1 3-3.87"/><circle cx="12" cy="7" r="4"/></svg>
-            <span className="label">Profile</span>
-          </a>
-        </div>
+        {/* Quick actions removed — profile is available in the main menu (nav-links) */}
       </div>
     </nav>
   )

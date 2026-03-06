@@ -67,14 +67,30 @@ export default function Profile(){
 
   return (
     <main style={{padding:24}}>
-      <h1>Profile</h1>
+      <h1></h1>
 
       <div style={{display:'flex', justifyContent:'center'}}>
         <div style={{width:820, border:'1px solid #e9ecef', borderRadius:10, padding:20, boxShadow:'0 6px 20px rgba(0,0,0,0.06)', background:'#fff', display:'flex', gap:24}}>
           {/* Left: avatar and summary */}
           <div style={{width:260, textAlign:'center'}}>
             <div style={{width:120, height:120, borderRadius:9999, background:'#f1f3f5', display:'flex', alignItems:'center', justifyContent:'center', fontSize:48, color:'#6c757d', margin:'0 auto'}}>
-              {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+              <label style={{display:'inline-block'}}>
+                <input type="file" accept="image/*" style={{display:'none'}} onChange={async (e)=>{
+                  const f = e.target.files && e.target.files[0]; if(!f) return;
+                  try{
+                    const fd = new FormData(); fd.append('image', f);
+                    const token = localStorage.getItem('token');
+                    const res = await fetch((import.meta.env?.VITE_API_BASE||'') + '/api/upload/avatar', { method: 'POST', body: fd, headers: token?{ Authorization: `Bearer ${token}` }:{}})
+                    const data = await res.json();
+                    if(res.ok){
+                      const u = JSON.parse(localStorage.getItem('user')||'null') || {};
+                      u.avatar = data.user.avatar; localStorage.setItem('user', JSON.stringify(u));
+                      window.dispatchEvent(new StorageEvent('storage', { key: 'user', newValue: JSON.stringify(u) }));
+                    } else { alert(data.message || 'Upload failed') }
+                  }catch(err){console.error(err); alert('Upload error')}
+                }} />
+                <img src={user.avatar||''} alt={user.name||'U'} onError={(e)=>{e.target.onerror=null;e.target.src=''}} style={{width:120,height:120,borderRadius:9999,background:'#f1f3f5',display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:48,color:'#6c757d',objectFit:'cover'}}/>
+              </label>
             </div>
             <h2 style={{marginTop:12, marginBottom:6}}>{user.name}</h2>
             <div style={{color:'#6c757d', fontSize:14}}>{user.email}</div>
