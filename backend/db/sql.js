@@ -31,19 +31,53 @@ async function init() {
   try {
     const pragma = db.exec("PRAGMA table_info('users');");
     let hasIsAdmin = false;
+    let hasAvatar = false;
     if (pragma && pragma[0] && pragma[0].values) {
       const cols = pragma[0].columns || [];
       const nameIdx = cols.indexOf('name');
       for (const row of pragma[0].values) {
-        if (row[nameIdx] === 'isAdmin') { hasIsAdmin = true; break; }
+        if (row[nameIdx] === 'isAdmin') { hasIsAdmin = true; }
+        if (row[nameIdx] === 'avatar') { hasAvatar = true; }
+        if (hasIsAdmin && hasAvatar) break;
       }
     }
     if (!hasIsAdmin) {
       // add column with default 0 for existing rows
       db.run('ALTER TABLE users ADD COLUMN isAdmin INTEGER NOT NULL DEFAULT 0;');
     }
+    if (!hasAvatar) {
+      try { db.run("ALTER TABLE users ADD COLUMN avatar TEXT;"); } catch (e) { /* ignore if table missing */ }
+    }
   } catch (e) {
     // ignore — if users table doesn't exist yet or PRAGMA fails, creation below will handle it
+  }
+
+  // Ensure programs table has an 'images' column for storing JSON array of image URLs
+  try {
+    const pragmaProg = db.exec("PRAGMA table_info('programs');");
+    let hasImages = false;
+    const progColsToEnsure = ['duration','capacity','accommodation','transport','cancellation','nights','language','phone'];
+    let missingProgCols = [];
+    if (pragmaProg && pragmaProg[0] && pragmaProg[0].values) {
+      const cols = pragmaProg[0].columns || [];
+      const nameIdx = cols.indexOf('name');
+      const existing = new Set();
+      for (const row of pragmaProg[0].values) {
+        existing.add(row[nameIdx])
+        if (row[nameIdx] === 'images') { hasImages = true; }
+      }
+      for (const c of progColsToEnsure) if (!existing.has(c)) missingProgCols.push(c)
+    }
+    if (!hasImages) {
+      // if the table exists but is missing images column, add it
+      try { db.run('ALTER TABLE programs ADD COLUMN images TEXT;'); } catch (e) { /* ignore if table missing */ }
+    }
+    // add any missing program columns
+    for (const c of missingProgCols) {
+      try { db.run(`ALTER TABLE programs ADD COLUMN ${c} TEXT;`); } catch (e) { /* ignore */ }
+    }
+  } catch (e) {
+    // ignore
   }
 
   // ensure tables
@@ -54,6 +88,7 @@ async function init() {
     password TEXT NOT NULL,
     role TEXT NOT NULL DEFAULT 'user',
     isAdmin INTEGER NOT NULL DEFAULT 0,
+    avatar TEXT,
     createdAt TEXT,
     updatedAt TEXT
   );
@@ -90,6 +125,7 @@ async function init() {
     price TEXT,
     age TEXT,
     days TEXT,
+    images TEXT,
     createdAt TEXT,
     updatedAt TEXT
   );`);

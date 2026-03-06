@@ -27,6 +27,9 @@ async function start() {
     app.use('/api/gers', require('./routes/gers'));
     app.use('/api/programs', require('./routes/programs'));
     app.use('/api/bookings', require('./routes/bookings'));
+    // upload route and serve uploaded files
+    app.use('/api/upload', require('./routes/upload'));
+    app.use('/public', express.static(path.join(__dirname, 'public')));
 
     // Serve frontend static files (if frontend was built) and provide SPA fallback.
     // This lets direct navigation to client-side routes like /booked return index.html

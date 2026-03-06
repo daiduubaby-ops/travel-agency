@@ -21,7 +21,11 @@ router.post('/register', async (req, res) => {
     // fetch by email (unique) to avoid relying on lastInsertRowid behavior
     const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
     const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
-    res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role, isAdmin: !!user.isAdmin } });
+    // include avatar as absolute URL if present
+    const protocol = req.protocol
+    const host = req.get('host')
+    const avatar = user.avatar ? (user.avatar.startsWith('http') ? user.avatar : `${protocol}://${host}${user.avatar}`) : null
+    res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role, isAdmin: !!user.isAdmin, avatar } });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Серверийн алдаа' });
@@ -42,7 +46,10 @@ router.post('/login', async (req, res) => {
     if (!match) return res.status(400).json({ message: 'Нэвтрэх мэдээлэл буруу байна' });
 
     const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
-    res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role, isAdmin: !!user.isAdmin } });
+    const protocol = req.protocol
+    const host = req.get('host')
+    const avatar = user.avatar ? (user.avatar.startsWith('http') ? user.avatar : `${protocol}://${host}${user.avatar}`) : null
+    res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role, isAdmin: !!user.isAdmin, avatar } });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Серверийн алдаа' });

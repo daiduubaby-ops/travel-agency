@@ -11,4 +11,6 @@ Ger Camp түрээсийн Backend API
 
 Тэмдэглэл
 - Эндпоинтууд: /api/auth, /api/gers, /api/bookings
+- Шинээр нэмэгдсэн: /api/programs болон /api/upload (админ нэвтрэлт шаардлагатай)
+  - /public/uploads-д байрлах зураг файлуудыг серверээр serve хийнэ
 - Хамгаалалттай эндпоинтуудад JWT шаардлагатай
