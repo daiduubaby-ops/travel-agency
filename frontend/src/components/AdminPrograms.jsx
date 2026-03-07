@@ -129,17 +129,29 @@ export default function AdminPrograms(){
 
   function handleChange(e){ const { name, value } = e.target; setForm(prev => ({ ...prev, [name]: value })) }
 
-  // images
+  // images - support picking multiple files
   async function handleImagePick(e){
-    const file = e.target.files && e.target.files[0]
-    if(!file) return
+    const files = e.target.files
+    if(!files || files.length === 0) return
     setLoading(true)
     try{
-      const url = await uploadImage(file)
-      // store absolute URL so images load correctly when frontend dev server is used
-      setForm(prev => ({ ...prev, images: [...(prev.images||[]), url] }))
+      const uploaded = []
+      for(let i=0;i<files.length;i++){
+        try{
+          const url = await uploadImage(files[i])
+          uploaded.push(url)
+        }catch(err){
+          console.error('image upload failed', err)
+          setMessage('Зураг байрлуулахад алдаа')
+        }
+      }
+      if(uploaded.length > 0){
+        setForm(prev => ({ ...prev, images: [...(prev.images||[]), ...uploaded] }))
+      }
     }catch(err){ setMessage('Зураг байрлуулахад алдаа') }
     setLoading(false)
+    // clear input so same files can be selected again
+    try{ e.target.value = '' }catch(e){}
   }
 
   // admin: upload home background
@@ -285,7 +297,10 @@ export default function AdminPrograms(){
               <div style={{marginTop:6}}><button type="button" className="btn" onClick={addDay}>Өдөр нэмэх</button></div>
             </div>
 
-            <label style={{display:'block',marginTop:8}}>Зураг оруулах<input type="file" accept="image/*" onChange={handleImagePick} /></label>
+            <label style={{display:'block',marginTop:8}}>Зураг оруулах
+              {/* allow selecting multiple files at once */}
+              <input type="file" accept="image/*" multiple onChange={handleImagePick} />
+            </label>
             <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:8}}>
               {(form.images||[]).map((img,i) => (
                 <div key={i} style={{position:'relative',width:100,height:70,border:'1px solid #eee',borderRadius:6,overflow:'hidden',marginRight:8}}>

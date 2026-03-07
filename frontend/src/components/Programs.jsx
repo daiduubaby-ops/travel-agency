@@ -54,12 +54,25 @@ export default function Programs(){
     // fallback: return original string
     return String(price)
   }
+
+  // try to get a numeric price (raw number) from various price formats so we can
+  // display a properly formatted 'Нийт үнэ' in the detail view.
+  function numericPrice(price){
+    if(price === undefined || price === null) return 0
+    try{
+      const cleaned = String(price).replace(/[^0-9.-]/g, '')
+      const n = Number(cleaned)
+      return Number.isFinite(n) ? n : 0
+    }catch(e){ return 0 }
+  }
   // check for a program id in the URL so we can show a detail view
   const params = new URLSearchParams(window.location.search)
   let id = params.get('id')
   const created = params.get('created')
   const [modalImage, setModalImage] = React.useState(null)
   const [successMessage, setSuccessMessage] = React.useState(created ? 'Аялал амжилттай нэмэгдлээ' : '')
+  const [imgIndex, setImgIndex] = React.useState(0)
+  const touch = React.useRef({ startX: 0, endX: 0 })
   // admin-configurable category buttons (stored in localStorage by admin)
   const [categoriesConfig, setCategoriesConfig] = React.useState(() => {
     try{ const raw = localStorage.getItem('programCategories'); if(raw) return JSON.parse(raw) }catch(e){}
@@ -83,7 +96,8 @@ export default function Programs(){
         ger_location: p.location,
         checkInDate: today.toISOString().slice(0,10),
         checkOutDate: tomorrow.toISOString().slice(0,10),
-        totalPrice: 0,
+        // use numericPrice helper to set the sample booking total from the program price
+        totalPrice: numericPrice(p.price),
         userId: (() => { try { return JSON.parse(localStorage.getItem('user'))?.id } catch { return null } })()
       }
       local.push(booking)
@@ -125,24 +139,44 @@ export default function Programs(){
             </div>
           )}
 
-          {/* show a larger hero image (click to enlarge) and thumbnails */}
+          {/* show a larger hero image (click to enlarge) using a simple carousel; thumbnails removed */}
           {program.images && program.images.length > 0 && (
             <>
-              <div style={{marginBottom:16,display:'flex',justifyContent:'center'}}>
+              <div
+                style={{marginBottom:16,display:'flex',justifyContent:'center',position:'relative'}}
+                onTouchStart={e => { touch.current.startX = e.touches[0].clientX }}
+                onTouchMove={e => { touch.current.endX = e.touches[0].clientX }}
+                onTouchEnd={() => {
+                  const dx = touch.current.endX - touch.current.startX
+                  if(Math.abs(dx) > 40){
+                    if(dx < 0) setImgIndex(i => (i + 1) % program.images.length)
+                    else setImgIndex(i => (i - 1 + program.images.length) % program.images.length)
+                  }
+                }}
+              >
                 <img
-                  src={program.images[0]}
+                  src={program.images[imgIndex]}
                   alt=""
-                  onClick={() => setModalImage(program.images[0])}
+                  onClick={() => setModalImage(program.images[imgIndex])}
                   style={{width:'100%',maxWidth:560,height:320,objectFit:'cover',borderRadius:12,cursor:'pointer',boxShadow:'0 6px 20px rgba(0,0,0,0.15)'}}
                 />
+
+                {/* left / right arrows overlay */}
+                {program.images.length > 1 && (
+                  <>
+                    <button onClick={() => setImgIndex(i => (i - 1 + program.images.length) % program.images.length)} style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',background:'rgba(0,0,0,0.4)',color:'#fff',border:0,borderRadius:6,width:36,height:36,cursor:'pointer'}} aria-label="Prev image">‹</button>
+                    <button onClick={() => setImgIndex(i => (i + 1) % program.images.length)} style={{position:'absolute',right:12,top:'50%',transform:'translateY(-50%)',background:'rgba(0,0,0,0.4)',color:'#fff',border:0,borderRadius:6,width:36,height:36,cursor:'pointer'}} aria-label="Next image">›</button>
+                  </>
+                )}
               </div>
-              <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:16}}>
-                {program.images.map((img, i) => (
-                  <button key={i} onClick={() => setModalImage(img)} style={{border:0,padding:0,background:'transparent',cursor:'pointer',width:120,height:80,overflow:'hidden',borderRadius:8}}>
-                    <img src={img} alt="" style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}} />
-                  </button>
-                ))}
-              </div>
+              {/* small indicator dots */}
+              {program.images.length > 1 && (
+                <div style={{display:'flex',gap:6,justifyContent:'center',marginBottom:16}}>
+                  {program.images.map((_, i) => (
+                    <div key={i} style={{width:8,height:8,borderRadius:8,background: i === imgIndex ? '#111' : '#ddd'}} />
+                  ))}
+                </div>
+              )}
             </>
           )}
           <h2 style={{marginBottom:12}}>АЯЛЛЫН ХӨТӨЛБӨР</h2>
@@ -169,8 +203,17 @@ export default function Programs(){
           </div>
 
           <div style={{marginTop:20}}>
-            <button className="btn btn-primary" onClick={() => startBooking(program)}>Захиалах</button>
-            <a style={{marginLeft:8}} className="btn btn-ghost" href="/programs">Буцах</a>
+            {/* show a compact total price on the right similar to design */}
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:12}}>
+              <div>
+                <button className="btn btn-primary" onClick={() => startBooking(program)}>Захиалах</button>
+                <a style={{marginLeft:8}} className="btn btn-ghost" href="/programs">Буцах</a>
+              </div>
+              <div style={{textAlign:'right', color:'#374151'}}>
+                <div style={{fontSize:12}}>Нийт үнэ:</div>
+                <div style={{fontSize:16,fontWeight:700}}>{formatMNT(numericPrice(program.price))}</div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
