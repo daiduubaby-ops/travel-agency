@@ -130,6 +130,18 @@ async function init() {
     updatedAt TEXT
   );`);
 
+  // features table: items shown on the Landing page under "Таны амралтыг онцгой болгох шалтгаанууд"
+  db.run(`CREATE TABLE IF NOT EXISTS features (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    lead TEXT,
+    description TEXT,
+    image TEXT,
+    sortOrder INTEGER DEFAULT 0,
+    createdAt TEXT,
+    updatedAt TEXT
+  );`);
+
   // persist in case created
   persist();
 }

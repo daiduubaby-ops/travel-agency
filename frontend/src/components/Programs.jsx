@@ -228,7 +228,26 @@ export default function Programs(){
 
         <div className="program-grid" role="list">
           {programs.map(p => (
-            <article key={p.id} className="program-card" role="listitem" tabIndex={0} aria-labelledby={`prog-${p.id}-title`}>
+            <article
+              key={p.id}
+              className={"program-card clickable"}
+              role="listitem"
+              tabIndex={0}
+              aria-labelledby={`prog-${p.id}-title`}
+              onClick={e => {
+                // don't navigate when user clicked an inner control (link/button)
+                if (e.target && e.target.closest && e.target.closest('a,button')) return
+                window.location.href = `/programs/${p.id}`
+              }}
+              onKeyDown={e => {
+                // allow Enter or Space to activate the card for keyboard users
+                if (e.key === 'Enter' || e.key === ' ') {
+                  // ignore when focus is on an inner control
+                  if (e.target && e.target.closest && e.target.closest('a,button')) return
+                  window.location.href = `/programs/${p.id}`
+                }
+              }}
+            >
               <div
                 className="program-media"
                 aria-hidden="true"

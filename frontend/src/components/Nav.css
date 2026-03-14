@@ -1,50 +1,77 @@
-/* Simple navbar styles used by Landing page */
-.site-nav{background:#111827;position:sticky;top:0;left:0;right:0;z-index:40;border-bottom:1px solid rgba(255,255,255,0.06)}
-.site-nav .nav-inner{display:flex;align-items:center;justify-content:space-between;padding:12px 0;transition:box-shadow 180ms ease, background 180ms ease, transform 180ms ease}
-.brand{font-weight:700;color:#f9fafb;text-decoration:none}
-.nav-links a{margin-left:12px;color:#f9fafb;text-decoration:none}
-.nav-links .btn{background:var(--gold, #f59e0b);color:#0b1220;padding:6px 10px;border-radius:4px}
-.btn-ghost{background:transparent;border:1px solid rgba(255,255,255,0.12);padding:6px 10px;border-radius:4px;margin-left:8px}
-.user-name{margin-left:12px;font-weight:600;color:#f9fafb}
+/* Navbar styles — enhanced background and subtle accents for a cleaner, friendlier look */
+.site-nav{
+  position:sticky;
+  top:0;left:0;right:0;
+  z-index:40;
+  color:var(--text-dark,#0b1220);
+  /* base gradient with a very subtle textured radial overlay for depth */
+  background-image:
+    radial-gradient(circle at 8% 12%, rgba(245,158,11,0.03), transparent 6%),
+    linear-gradient(180deg,#ffffff 0%, #fbfbfd 70%);
+  border-bottom:1px solid rgba(15,23,42,0.06);
+  backdrop-filter: blur(5px) saturate(115%);
+}
+
+.site-nav::after{
+  /* thin gold accent line to add visual interest at the bottom of the nav */
+  content:"";
+  position:absolute;left:0;right:0;bottom:0;
+  height:6px;
+  background:linear-gradient(90deg, rgba(245,158,11,0.16), rgba(245,158,11,0.04));
+  pointer-events:none;
+}
+
+.site-nav .nav-inner{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 0;transition:box-shadow 220ms ease, background 220ms ease, transform 220ms ease;
+}
+
+.brand{font-weight:700;color:var(--text-dark,#0b1220);text-decoration:none}
+.site-nav .brand{display:inline-block;padding:6px 8px;border-radius:8px;background:rgba(245,158,11,0.03)}
+
+.nav-links a{margin-left:12px;color:var(--text-dark,#0b1220);text-decoration:none}
+.nav-links a{display:inline-flex;align-items:center}
+
+.nav-links .btn{
+  background:var(--gold,#f59e0b);
+  color:#0b1220;padding:8px 12px;border-radius:10px;
+  box-shadow:0 6px 18px rgba(245,158,11,0.06);border:none;transition:transform 180ms ease, box-shadow 180ms ease;
+}
+.nav-links .btn:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(245,158,11,0.09)}
+
+.btn-ghost{background:transparent;border:1px solid rgba(11,18,32,0.06);padding:6px 10px;border-radius:8px;margin-left:8px;color:var(--text-dark,#0b1220)}
+.user-name{margin-left:12px;font-weight:600;color:var(--text-dark,#0b1220)}
+
+/* Avatar / user display */
+.user-avatar{width:34px;height:34px;border-radius:50%;overflow:hidden;border:2px solid rgba(245,158,11,0.12);box-shadow:0 4px 14px rgba(11,18,32,0.06);display:inline-block;vertical-align:middle}
+.user-avatar img{display:block;width:100%;height:100%;object-fit:cover}
 
 /* Quick action icons (top-right) */
 .quick-actions{display:flex;align-items:center;gap:18px;margin-left:16px}
-.action-item{display:flex;flex-direction:column;align-items:center;justify-content:center;color:#9ca3af;text-decoration:none;font-size:12px}
+.action-item{display:flex;flex-direction:column;align-items:center;justify-content:center;color:#6b7280;text-decoration:none;font-size:12px}
 .action-item .label{margin-top:6px;display:block;color:inherit;font-size:11px}
 .action-item svg{transition:color 150ms ease, transform 150ms ease;stroke:currentColor}
 .action-item:hover{color:#374151}
-.action-item:focus{outline:2px solid rgba(55,65,81,0.12);outline-offset:2px}
+.action-item:focus{outline:2px solid rgba(55,65,81,0.08);outline-offset:2px}
 
 /* Keep spacing and alignment on small screens */
 @media(max-width:800px){
   .quick-actions{gap:12px}
   .action-item .label{display:none}
-}
-
-/* icon styling inside nav links */
-.nav-icon{display:inline-flex;align-items:center;justify-content:center;margin-right:8px;vertical-align:middle;color:var(--gold, #f59e0b)}
-.nav-links a{display:inline-flex;align-items:center}
-.nav-links .btn .nav-icon{color:inherit}
-.nav-links a:hover .nav-icon{transform:translateY(-2px)}
-
-/* Sticky when scrolled: pop out with shadow and stick to top */
-.site-nav.scrolled{box-shadow:0 12px 40px rgba(2,6,23,0.6);background:linear-gradient(180deg,#0b1220, rgba(11,18,32,0.98));border-bottom:1px solid rgba(255,255,255,0.06)}
-
-/* Divider line under nav to separate it from the page content */
-.site-nav{backdrop-filter: blur(3px);}
-
-/* Make the nav visually distinct from main content: subtle lift and stronger border */
-.site-nav .nav-inner{background:transparent}
-.site-nav .brand{display:inline-block;padding:2px 6px;border-radius:6px}
-.site-nav.scrolled .brand{background:rgba(245,158,11,0.06)}
-
-/* On small screens keep clear separation */
-@media(max-width:800px){
   .site-nav{border-bottom:3px solid rgba(15,23,42,0.06)}
 }
 
+/* icon styling inside nav links */
+.nav-icon{display:inline-flex;align-items:center;justify-content:center;margin-right:8px;vertical-align:middle;color:var(--gold,#f59e0b)}
+.nav-links .btn .nav-icon{color:inherit}
+.nav-links a:hover .nav-icon{transform:translateY(-2px)}
+
+/* Sticky when scrolled: subtle shadow & stronger accent */
+.site-nav.scrolled{box-shadow:0 10px 40px rgba(16,24,40,0.08);background-image:linear-gradient(180deg,#ffffff,#f8f9fb);}
+.site-nav.scrolled .brand{background:rgba(245,158,11,0.06)}
+
 /* Ensure the navbar background stretches edge-to-edge while the inner content aligns with site container */
-.site-nav > .container{max-width:1100px;margin:0 auto}
+.site-nav > .container{max-width:1200px;margin:0 auto;padding:0 18px}
 
 /* reset body margin if present to avoid unexpected gaps */
 html,body{margin:0;padding:0}

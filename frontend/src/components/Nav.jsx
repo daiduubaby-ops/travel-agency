@@ -58,6 +58,8 @@ export default function Nav(){
           <a href="/news"><span className="nav-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" width="18" height="18" strokeWidth="1.5" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15V6a2 2 0 0 0-2-2H7L3 6v9a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2z"/><path d="M7 10h8M7 14h5"/></svg>
           </span>Мэдээ мэдээлэл</a>
+          <a href="/mongol">Монгол орны тухай</a>
+          <a href="/darhad">Дархад тайга, Хөвсгөл</a>
           <a href="/programs"><span className="nav-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" width="18" height="18" strokeWidth="1.5" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
           </span>Аяллын хөтөлбөр</a>
@@ -98,7 +100,7 @@ export default function Nav(){
                   }} />
                   <img src={user.avatar||''} alt={user.name||'U'} onError={(e)=>{e.target.onerror=null;e.target.src=''}} style={{width:26,height:26,borderRadius:9999,background:'#f1f3f5',display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:12,color:'#374151',objectFit:'cover'}}/>
                 </label>
-              <span style={{fontSize:14,color:'#111'}}>{user.name}</span>
+              <span style={{fontSize:14,color:'var(--text-dark,#0b1220)',fontWeight:600}}>{user.name}</span>
             </a>
           ) : (
             <a href="/profile"><span className="nav-icon" aria-hidden="true">

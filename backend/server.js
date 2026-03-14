@@ -27,6 +27,8 @@ async function start() {
     app.use('/api/gers', require('./routes/gers'));
     app.use('/api/programs', require('./routes/programs'));
     app.use('/api/bookings', require('./routes/bookings'));
+    // features (landing page items)
+    app.use('/api/features', require('./routes/features'));
     // upload route and serve uploaded files
     app.use('/api/upload', require('./routes/upload'));
     app.use('/public', express.static(path.join(__dirname, 'public')));

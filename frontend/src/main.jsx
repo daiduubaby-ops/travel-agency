@@ -15,6 +15,8 @@ import News from './components/News'
 import Programs from './components/Programs'
 import Profile from './components/Profile'
 import AdminPrograms from './components/AdminPrograms'
+import Mongol from './components/Mongol'
+import Darhad from './components/Darhad'
 
 
 
@@ -30,6 +32,8 @@ function App(){
   if(path === '/booked') View = BookedListings
   if(path === '/rules') View = Rules
   if(path === '/news') View = News
+  if(path === '/mongol') View = Mongol
+  if(path === '/darhad') View = Darhad
   // support both the programs list and individual program detail routes like /programs/1
   if(path === '/programs' || path.startsWith('/programs')) View = Programs
   if(path === '/profile') View = Profile

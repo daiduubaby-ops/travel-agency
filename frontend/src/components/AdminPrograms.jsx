@@ -25,6 +25,9 @@ async function uploadImage(file){
 
 export default function AdminPrograms(){
   const [programs, setPrograms] = useState([])
+  const [features, setFeatures] = useState([])
+  const [editingFeature, setEditingFeature] = useState(null)
+  const [featureForm, setFeatureForm] = useState({ title:'', lead:'', description:'', image:'' })
   const [editing, setEditing] = useState(null)
   const [form, setForm] = useState(emptyForm)
   const [message, setMessage] = useState('')
@@ -65,6 +68,17 @@ export default function AdminPrograms(){
       }
     }
     load()
+    // load features for admin management
+    ;(async function loadFeatures(){
+      try{
+        const token = localStorage.getItem('token')
+        const headers = token ? { Authorization: `Bearer ${token}` } : {}
+        const res = await fetch('/api/features', { headers })
+        if(!res.ok) return
+        const data = await res.json()
+        if(mounted) setFeatures(data)
+      }catch(e){/* ignore */}
+    })()
     return () => { mounted = false }
   }, [])
 
@@ -210,6 +224,21 @@ export default function AdminPrograms(){
     setLoading(false)
   }
 
+  // feature helpers (moved inside component so they can access state)
+  function setFeatureLocal(next){ try{ localStorage.setItem('features', JSON.stringify(next)) }catch(e){}; setFeatures(next) }
+
+  function handleFeatureEdit(f){ setEditingFeature(f.id); setFeatureForm({ title: f.title||'', lead: f.lead||'', description: f.description||'', image: f.image||'' }) ; setMessage('') }
+
+  async function handleFeatureDelete(id){ if(!confirm('Энэ элементийг устгах уу?')) return; setLoading(true); try{ const token = localStorage.getItem('token'); const res = await fetch(`/api/features/${id}`, { method: 'DELETE', headers: token ? { Authorization: `Bearer ${token}` } : {} }); if(res.ok){ const next = features.filter(x=>x.id!==id); setFeatureLocal(next); setMessage('Элемент устгагдлаа') } else { const d = await res.json().catch(()=>({})); setMessage(d.message||'Устгах үед алдаа') } }catch(e){ setMessage('Сүлжээний алдаа') } setLoading(false) }
+
+  function handleFeatureChange(e){ const { name, value } = e.target; setFeatureForm(prev => ({ ...prev, [name]: value })) }
+
+  async function handleFeatureImagePick(e){ const file = e.target.files && e.target.files[0]; if(!file) return; setLoading(true); try{ const url = await uploadImage(file); setFeatureForm(prev => ({ ...prev, image: url })); setMessage('Зураг байршуулсан') }catch(err){ setMessage('Зураг байрлуулахад алдаа') } setLoading(false); try{ e.target.value = '' }catch(e){} }
+
+  async function handleFeatureCreate(e){ e && e.preventDefault(); setLoading(true); setMessage(''); try{ const token = localStorage.getItem('token'); const res = await fetch('/api/features', { method: 'POST', headers: token ? { Authorization: `Bearer ${token}`, 'Content-Type':'application/json' } : { 'Content-Type':'application/json' }, body: JSON.stringify(featureForm) }); if(!res.ok){ const d = await res.json().catch(()=>({})); setMessage(d.message || 'Create failed'); setLoading(false); return } const created = await res.json(); const next = [...features, created]; setFeatureLocal(next); setFeatureForm({ title:'', lead:'', description:'', image:'' }); setMessage('Элемент нэмэгдлээ') }catch(e){ setMessage('Network error') } setLoading(false) }
+
+  async function handleFeatureUpdate(e){ e && e.preventDefault(); setLoading(true); setMessage(''); try{ const token = localStorage.getItem('token'); const res = await fetch(`/api/features/${editingFeature}`, { method: 'PUT', headers: token ? { Authorization: `Bearer ${token}`, 'Content-Type':'application/json' } : { 'Content-Type':'application/json' }, body: JSON.stringify(featureForm) }); if(!res.ok){ const d = await res.json().catch(()=>({})); setMessage(d.message || 'Update failed'); setLoading(false); return } const updated = await res.json(); const next = features.map(p => p.id === updated.id ? updated : p); setFeatureLocal(next); setEditingFeature(null); setFeatureForm({ title:'', lead:'', description:'', image:'' }); setMessage('Элемент шинэчлэгдлээ') }catch(e){ setMessage('Network error') } setLoading(false) }
+
   return (
     <div className="container" style={{paddingTop:12}}>
       <h2></h2>
@@ -317,6 +346,52 @@ export default function AdminPrograms(){
           </form>
         </div>
       </section>
+
+      {/* Features (Landing) admin management */}
+      <section style={{marginTop:20}}>
+        <div style={{display:'flex', gap:20}}>
+          <div style={{flex:1}}>
+            <h3>Landing: Таны амралтыг онцгой болгох шалтгаанууд</h3>
+            <table style={{width:'100%',borderCollapse:'collapse'}}>
+              <thead><tr style={{textAlign:'left'}}><th>Id</th><th>Гарчиг</th><th></th></tr></thead>
+              <tbody>
+                {features.map(f => (
+                  <tr key={f.id} style={{borderTop:'1px solid #eee'}}>
+                    <td style={{padding:8}}>{f.id}</td>
+                    <td style={{padding:8}}>{f.title}</td>
+                    <td style={{padding:8}}>
+                      <button className="btn btn-ghost" onClick={() => handleFeatureEdit(f)}>Засах</button>
+                      <button className="btn" onClick={() => handleFeatureDelete(f.id)} style={{marginLeft:8}} disabled={loading}>Устгах</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div style={{width:420}}>
+            <h3 style={{marginBottom:8}}>{editingFeature ? 'Элемент засварлах' : 'Шинэ элемент нэмэх'}</h3>
+            <form onSubmit={editingFeature ? handleFeatureUpdate : handleFeatureCreate}>
+              <label style={{display:'block',marginBottom:8}}>Гарчиг<input name="title" value={featureForm.title} onChange={handleFeatureChange} required /></label>
+              <label style={{display:'block',marginBottom:8}}>Товч тайлбар<input name="lead" value={featureForm.lead} onChange={handleFeatureChange} /></label>
+              <label style={{display:'block',marginBottom:8}}>Дэлгэрэнгүй<textarea name="description" value={featureForm.description} onChange={handleFeatureChange} /></label>
+              <label style={{display:'block',marginTop:8}}>Зураг<input type="file" accept="image/*" onChange={handleFeatureImagePick} /></label>
+              {featureForm.image && (
+                <div style={{marginTop:8}}>
+                  <img src={featureForm.image} alt="preview" style={{width:140,height:90,objectFit:'cover',borderRadius:6}} />
+                </div>
+              )}
+              <div style={{display:'flex',justifyContent:'flex-end',gap:8, marginTop:12}}>
+                {editingFeature && <button type="button" className="btn btn-ghost" onClick={() => { setEditingFeature(null); setFeatureForm({ title:'', lead:'', description:'', image:'' }) }}>Болих</button>}
+                <button className="btn" type="submit" disabled={loading}>{editingFeature ? 'Хадгалах' : 'Нэмэх'}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+
     </div>
   )
 }
+
+  // feature helpers are defined inside the component body above — duplicate helpers removed
