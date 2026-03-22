@@ -1,0 +1,74 @@
+/* Modern card/accordion design for Аяллын журам */
+.rules-page {
+  padding: 32px;
+  color: #222;
+  font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+}
+.rules-header h1{
+  font-size: 28px;
+  letter-spacing: 0.6px;
+  margin: 0 0 6px 0;
+  font-weight: 700;
+}
+.rules-header h2{
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0 0 18px 0;
+  font-weight: 500;
+}
+
+.rules-grid{
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.rule-card{
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(15,23,42,0.06);
+  border: 1px solid rgba(15,23,42,0.04);
+  overflow: hidden;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.rule-card:hover{ transform: translateY(-4px); box-shadow: 0 10px 28px rgba(15,23,42,0.08);} 
+
+.card-header{
+  width:100%;
+  display:flex;
+  align-items:center;
+  gap:14px;
+  padding:16px 18px;
+  background: linear-gradient(180deg, rgba(250,250,250,0.6), rgba(255,255,255,0.4));
+  border:none;
+  cursor:pointer;
+}
+.card-header .icon{ display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px; border-radius:8px; background:#f3f4f6; color:#0f172a;}
+.card-header h3{ margin:0; font-size:16px; font-weight:700;}
+.card-title{ flex:1 }
+.chev{ width:20px; height:20px; background:transparent; mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="black" d="M9 6l6 6-6 6"/></svg>') center/contain no-repeat; transform:rotate(90deg); opacity:0.5 }
+
+.card-body{ padding:14px 18px 20px 18px; border-top:1px solid rgba(15,23,42,0.03); display:none }
+.rule-card.open .card-body{ display:block }
+.card-body ul{ margin:0; padding-left:18px; color:#334155 }
+.card-body li{ margin:8px 0; line-height:1.45 }
+.card-body p{ margin:8px 0; color:#334155 }
+
+.callout{ margin-top:12px; background:#f8fafc; border-left:4px solid #60a5fa; padding:10px 12px; border-radius:8px; color:#0f172a }
+
+.rules-footer{ margin-top:18px; }
+.final-note{ color:#475569; font-size:13px }
+
+/* Responsive */
+@media (max-width: 900px){
+  .rules-grid{ grid-template-columns: 1fr; }
+  .rules-page{ padding:20px }
+  .rules-header h1{ font-size:22px }
+}
+
+@media (max-width:420px){
+  .card-header{ gap:10px; padding:12px }
+  .card-header .icon{ width:36px; height:36px }
+  .rules-header h1{ font-size:20px }
+}

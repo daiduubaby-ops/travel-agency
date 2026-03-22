@@ -221,13 +221,13 @@ export default function Programs(){
   }
 
   return (
-    <section className="programs">
+    <section className="programs" aria-labelledby="programs-heading">
       <div className="container">
-          <h2>Аяллын хөтөлбөр</h2>
-        <p className="programs-lead">Та дамжуулан нэг өдрийн олон үйл ажиллагаа бүхий хөтөлбөрүүдээс сонгож болно. Доорх картуудаар дэлгэрэнгүйг үзнэ үү.</p>
+        <h2 id="programs-heading" className="programs-title">Аяллын хөтөлбөр</h2>
+        <p className="programs-lead">Манай хамгийн алдартай аяллын багцууд — хугацаа, төрөл, үнэ нь тодорхой, та амархан сонгож захиалж болно.</p>
 
         <div className="program-grid" role="list">
-          {programs.map(p => (
+          {programs.slice(0,6).map(p => (
             <article
               key={p.id}
               className={"program-card clickable"}
@@ -248,21 +248,34 @@ export default function Programs(){
                 }
               }}
             >
-              <div
-                className="program-media"
-                aria-hidden="true"
-                style={p.images && p.images[0] ? { backgroundImage: `url(${p.images[0]})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}
-              />
+              <div className="program-media" aria-hidden="true">
+                {p.images && p.images[0] ? (
+                  <img src={p.images[0]} alt={p.title} />
+                ) : (
+                  <div className="program-media-fallback" />
+                )}
+              </div>
               <div className="program-body">
-                <h3 id={`prog-${p.id}-title`}>{p.title}</h3>
-                <div className="program-meta">
-                  <div><strong>Цаг:</strong> {p.time}</div>
-                  <div><strong>Байршил:</strong> {p.location}</div>
+                <div className="program-head">
+                  <h3 id={`prog-${p.id}-title`}>{p.title}</h3>
+                  {p.category && (
+                    <span className="program-badge" aria-hidden title={p.category}>✓</span>
+                  )}
                 </div>
-                <p className="program-extra">Нас: {p.age} • Үнэ: {displayPrice(p.price)}</p>
-                <div className="program-actions">
-                  <a className="btn btn-outline" href={`/programs/${p.id}`}>Дэлгэрэнгүй</a>
-                  <button className="btn btn-primary" onClick={() => startBooking(p)}>Захиалах</button>
+
+                <div className="program-meta">
+                  <div className="program-duration"><span className="icon">📅</span> {p.duration || p.time || '—'}</div>
+                  <div className="program-location"><span className="icon">📍</span> {p.location || '—'}</div>
+                </div>
+
+                <p className="program-extra">{p.age ? `Нас: ${p.age}` : ''}</p>
+
+                <div className="program-footer">
+                  <div className="program-actions">
+                    <a className="btn btn-outline" href={`/programs/${p.id}`}>Дэлгэрэнгүй</a>
+                    <button className="btn btn-primary" onClick={() => startBooking(p)}>Захиалах</button>
+                  </div>
+                  <div className="program-price" aria-hidden>{displayPrice(p.price)}</div>
                 </div>
               </div>
             </article>

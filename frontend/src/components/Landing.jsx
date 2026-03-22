@@ -100,159 +100,115 @@ export default function Landing(){
   }
 
   return (
-    <div className="landing">
+    <div className="landing dark">
+      {/* HERO */}
       <header
-        className={`hero ${hero ? 'has-hero' : ''}`}
-        style={
-          hero
-            ? { backgroundImage: `url(${hero})`, backgroundSize: 'cover', backgroundPosition: 'center' }
-            : undefined
-        }
+        className={`hero hero-dark ${hero ? 'has-hero' : ''}`}
+        style={ hero ? { backgroundImage: `url(${hero})` } : undefined }
       >
-        {/* Decorative Mongolian landscape illustration (pure SVG) - hide when a hero image is present */}
-        {!hero && (
-          <svg className="hero-illustration" viewBox="0 0 1200 420" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-            <defs>
-              <linearGradient id="g-sky" x1="0" x2="0" y1="0" y2="1">
-                <stop offset="0%" stopColor="#cfeeff" />
-                <stop offset="60%" stopColor="#9fd3ff" />
-                <stop offset="100%" stopColor="#7cc5ff" />
-              </linearGradient>
-              <linearGradient id="g-mt" x1="0" x2="1">
-                <stop offset="0%" stopColor="#e6f3ff" />
-                <stop offset="100%" stopColor="#7aa3bf" />
-              </linearGradient>
-              <linearGradient id="g-lake" x1="0" x2="0" y1="0" y2="1">
-                <stop offset="0%" stopColor="#2bb0ff" />
-                <stop offset="100%" stopColor="#0ea5e9" />
-              </linearGradient>
-            </defs>
+        <div className="hero-overlay" />
+        <div className="hero-inner container">
+          <nav aria-hidden className="hero-topbar">
+            {/* decorative thin gold line */}
+            <div className="gold-line" />
+          </nav>
 
-            {/* sky */}
-            <rect x="0" y="0" width="1200" height="420" fill="url(#g-sky)" />
-
-            {/* distant mountains (cool blue tones) */}
-            <path d="M0 260 L140 180 L260 240 L380 170 L520 230 L660 150 L820 240 L980 160 L1100 220 L1200 160 L1200 420 L0 420 Z" fill="url(#g-mt)" opacity="0.9" />
-
-            {/* mid-ground foothills */}
-            <path d="M0 320 C140 270, 300 340, 460 300 C620 260, 780 340, 940 310 C1100 280, 1200 350, 1200 350 L1200 420 L0 420 Z" fill="#a6d8ff" opacity="0.85" />
-
-            {/* lake in the foreground */}
-            <g transform="translate(0,320)">
-              <path d="M0 30 C140 -10, 300 30, 460 10 C620 -10, 780 30, 940 5 C1100 -20, 1200 10, 1200 10 L1200 140 L0 140 Z" fill="url(#g-lake)" opacity="0.98" />
-              {/* subtle highlights/reflections */}
-              <path d="M40 50 C200 30, 360 70, 520 50" stroke="rgba(255,255,255,0.22)" strokeWidth="8" fill="none" strokeLinecap="round" />
-              <path d="M660 60 C820 40, 980 80, 1140 58" stroke="rgba(255,255,255,0.16)" strokeWidth="6" fill="none" strokeLinecap="round" />
-            </g>
-
-            {/* small ger silhouette on a lakeshore (dark navy) */}
-            <g transform="translate(160,250) scale(0.85)" fill="#06142a" opacity="0.95">
-              <ellipse cx="80" cy="40" rx="72" ry="28" />
-              <rect x="10" y="40" width="140" height="70" rx="20" />
-              <path d="M10 40 C80 10, 120 10, 150 40" fill="none" stroke="#06142a" strokeWidth="3" />
-              <circle cx="80" cy="28" r="6" />
-            </g>
-
-            {/* horse silhouette further along the shore */}
-            <g transform="translate(760,270) scale(0.95)" fill="#06142a" opacity="0.9">
-              <path d="M0 24 c12 -8,28 -12,40 -8 c8 2,14 8,22 10 c6 2,10 0,16 -2 c4 -2,8 -6,12 -6 c6 0,12 6,14 10 c4 8 2 18 -2 24 c-6 8 -16 12 -26 14 c-12 2 -24 0 -36 -6 c-8 -4 -14 -12 -22 -16 c-6 -4 -12 -8 -18 -12 z" />
-              <path d="M58 12 c6 -6,14 -10,22 -10 c6 0,10 4,14 8" stroke="#06142a" strokeWidth="2" fill="none" />
-            </g>
-          </svg>
-        )}
-
-        <div className="hero-inner">
-          {/* New two-column hero layout: copy on the left, circular visual on the right.
-              Text content is kept exactly the same per request. */}
-          <div className="hero-grid">
-            <div className="hero-copy">
-              <h1>Тал нутгийн түүхийг туулж, гэрийн тооноор оддыг ширт</h1>
-              <p className="lead">Улаан гал, уудам тал, уламжлалт тав тух.
-Аяллаа өнөөдөр сонго, гэртээ амар — Монголын аялал энд эхэлнэ!</p>
-              <div className="cta">
-                <a className="btn btn-primary" href="/listings">Энд дарж гэрээ захиалаарай</a>
-                {/* small helper text (hosting mention removed) */}
-                <p style={{marginTop:12, color:'#6b7280'}}></p>
-              </div>
+          <div className="hero-center">
+            <h1 className="hero-title">ADVENTURE</h1>
+            <p className="hero-sub">Discover remote places, cinematic landscapes and the luxury of true solitude.</p>
+            <div className="hero-cta">
+              <a className="btn btn-primary btn-hero" href="/listings">Book an experience</a>
+              <a className="btn btn-outline" href="/programs">View programs</a>
             </div>
 
-            <div className="hero-visual" aria-hidden style={ hero ? { backgroundImage: `url(${hero})` } : undefined } />
+            <ul className="hero-features" role="list">
+              <li>Curated expeditions</li>
+              <li>Private guides & bespoke services</li>
+              <li>Comfortable high-end camps</li>
+            </ul>
           </div>
         </div>
       </header>
 
-      <section className="features" aria-labelledby="features-heading">
-        <div className="container">
-          <h2 id="features-heading">Таны амралтыг онцгой болгох шалтгаанууд</h2>
+      {/* The Wonders of Nature */}
+      <section className="wonders container">
+        <h2>The Wonders of Nature</h2>
+        <p className="section-lead">Handpicked destinations that showcase raw landscapes and immersive experiences.</p>
 
-          {/* Dynamic features: fetched from backend so admin can add/edit */}
-          <div className="feature-cards" role="list">
-            {/** render placeholder while loading or empty state */}
-            <FeatureList />
+        <div className="dest-grid">
+          {["1772949320319-1fx3x0.jpg","1772799338849-mom9n0.jpg","1772800220860-gjx19c.jpg","1772800244233-0dhlna.jpg"].map((fn, idx) => (
+            <article key={idx} className="dest-card">
+              <div className="dest-media" style={{ backgroundImage: `url('/public/uploads/${fn}')` }} aria-hidden />
+              <div className="dest-body">
+                <h3>Destination {idx + 1}</h3>
+                <p className="muted">A short enticing sentence that hints at discovery and serenity.</p>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      {/* Reasons */}
+      <section className="reasons">
+        <div className="container">
+          <h2>Reason For Choosing Us</h2>
+          <div className="reasons-grid">
+            {[
+              { title:'Expert Guides', desc:'Local experts with decades of experience.' },
+              { title:'Luxury Camps', desc:'Comfort in the wild — elevated camps and dining.' },
+              { title:'Sustainable Travel', desc:'We protect the places we visit.' },
+              { title:'Tailor-made', desc:'Personalized itineraries for discerning travelers.' }
+            ].map((r,i) => (
+              <div key={i} className="reason">
+                <div className="reason-icon" aria-hidden>
+                  <svg viewBox="0 0 48 48" width="36" height="36" fill="none"><circle cx="24" cy="24" r="22" stroke="currentColor" strokeWidth="2"/></svg>
+                </div>
+                <h4>{r.title}</h4>
+                <p className="muted">{r.desc}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      <section className="trips">
-        <div className="container">
-          <h2>Сонгож болох аялалууд</h2>
-          <div className="listings">
-            <div className="listing">
-              <div
-                className="listing-img"
-                style={images[0] ? { backgroundImage: `url(${images[0]})` } : undefined}
-              >
-                {/* clicking the yellow area will open file picker */}
-                <input type="file" accept="image/*" onChange={e => handleImageChange(0, e)} />
-              </div>
-              <div className="listing-body">
-                <h3>Уулын харагдах гэр</h3>
-                <p>Хөндлөн алхагчид болон байгаль хайрлагчдад төгс — шөнийн үнэ ₮30-с эхлэнэ</p>
-              </div>
-            </div>
-            <div className="listing">
-              <div
-                className="listing-img"
-                style={images[1] ? { backgroundImage: `url(${images[1]})` } : undefined}
-              >
-                <input type="file" accept="image/*" onChange={e => handleImageChange(1, e)} />
-              </div>
-              <div className="listing-body">
-                <h3>Гол дагасан гэр (гэр бүлийн)</h3>
-                <p>Гол руу гарцтай гэр бүлийн тохиромжтой газар — шөнийн үнэ ₮45-с эхлэнэ</p>
-              </div>
-            </div>
-            <div className="listing">
-              <div
-                className="listing-img"
-                style={images[2] ? { backgroundImage: `url(${images[2]})` } : undefined}
-              >
-                <input type="file" accept="image/*" onChange={e => handleImageChange(2, e)} />
-              </div>
-              <div className="listing-body">
-                <h3>Нүүдэлчдийн амьдралын туршлага</h3>
-                <p>Соёлын туршлага авахын тулд нүүдэлч гэр бүлд нэгдээрэй — шөнийн үнэ ₮60-с эхлэнэ</p>
-              </div>
+      {/* Split layout promotional */}
+      <section className="promo container split">
+        <div className="split-media">
+          <div className="stacked" style={{ backgroundImage:`url('/public/uploads/1772810636346-m39do1.jpg')` }} />
+          <div className="stacked" style={{ backgroundImage:`url('/public/uploads/1772797589684-0cvvp1.jpg')` }} />
+        </div>
+        <div className="split-copy">
+          <h3>Journey Beyond the Ordinary</h3>
+          <p className="muted">Join small group departures or enjoy private expeditions designed to reveal the heart of wild places.</p>
+          <a className="btn btn-primary" href="/bookings">Start your booking</a>
+        </div>
+      </section>
+
+      {/* Explore large forest background with overlay graphic */}
+      <section className="explore">
+        <div className="explore-bg" style={{ backgroundImage: `url('/public/uploads/1772896450896-kvp8jn.jpg')` }}>
+          <div className="explore-overlay">
+            <svg className="explore-graph" viewBox="0 0 800 200" preserveAspectRatio="none" aria-hidden>
+              <polyline points="0,140 80,100 160,120 240,60 320,80 400,40 480,52 560,30 640,60 720,20 800,40" fill="none" strokeWidth="2" stroke="rgba(255,215,150,0.85)" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <div className="explore-copy">
+              <h3>Explore The Nature With Us</h3>
+              <p className="muted">Cinematic routes, editorial storytelling and photography-led experiences.</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Programs section - daily program cards */}
-      <section>
-        <div className="container">
-          {/* lazy-load Programs component to keep landing light */}
-          <Suspense fallback={<div>Ачааллаж байна...</div>}>
-            <Programs />
-          </Suspense>
-        </div>
-      </section>
-
-      {/* News section removed per request */}
-
-      <footer className="site-footer">
-        <div className="container">
-          <p>© {new Date().getFullYear()} Гэр Кэмп </p>
+      <footer className="site-footer dark-footer">
+        <div className="container footer-inner">
+          <div className="brand-row">
+            <a className="brand" href="/">Khankh Tour</a>
+            <div className="socials">
+              <a aria-label="instagram" href="#">IG</a>
+              <a aria-label="facebook" href="#">FB</a>
+            </div>
+          </div>
+          <small className="muted">© {new Date().getFullYear()} Khankh Tour — All rights reserved</small>
         </div>
       </footer>
     </div>

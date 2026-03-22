@@ -1,77 +1,56 @@
-/* Navbar styles — enhanced background and subtle accents for a cleaner, friendlier look */
+/* Dark glass navbar with thin gold accent line */
 .site-nav{
   position:sticky;
   top:0;left:0;right:0;
-  z-index:40;
-  color:var(--text-dark,#0b1220);
-  /* base gradient with a very subtle textured radial overlay for depth */
-  background-image:
-    radial-gradient(circle at 8% 12%, rgba(245,158,11,0.03), transparent 6%),
-    linear-gradient(180deg,#ffffff 0%, #fbfbfd 70%);
-  border-bottom:1px solid rgba(15,23,42,0.06);
-  backdrop-filter: blur(5px) saturate(115%);
-}
-
-.site-nav::after{
-  /* thin gold accent line to add visual interest at the bottom of the nav */
-  content:"";
-  position:absolute;left:0;right:0;bottom:0;
-  height:6px;
-  background:linear-gradient(90deg, rgba(245,158,11,0.16), rgba(245,158,11,0.04));
-  pointer-events:none;
+  z-index:60;
+  color:var(--muted-white);
+  background: linear-gradient(180deg, rgba(5,6,10,0.48), rgba(5,6,10,0.28));
+  backdrop-filter: blur(8px) saturate(120%);
+  border-bottom:1px solid var(--border-gold);
 }
 
 .site-nav .nav-inner{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:14px 0;transition:box-shadow 220ms ease, background 220ms ease, transform 220ms ease;
+  display:flex;align-items:center;justify-content:space-between;padding:14px 0;gap:12px;max-width:1200px;margin:0 auto;padding-left:18px;padding-right:18px
 }
 
-.brand{font-weight:700;color:var(--text-dark,#0b1220);text-decoration:none}
-.site-nav .brand{display:inline-block;padding:6px 8px;border-radius:8px;background:rgba(245,158,11,0.03)}
-
-.nav-links a{margin-left:12px;color:var(--text-dark,#0b1220);text-decoration:none}
-.nav-links a{display:inline-flex;align-items:center}
-
-.nav-links .btn{
-  background:var(--gold,#f59e0b);
-  color:#0b1220;padding:8px 12px;border-radius:10px;
-  box-shadow:0 6px 18px rgba(245,158,11,0.06);border:none;transition:transform 180ms ease, box-shadow 180ms ease;
+.site-nav::after{
+  content:'';position:absolute;left:0;right:0;bottom:0;height:3px;background:linear-gradient(90deg,var(--gold), rgba(212,175,55,0.5));opacity:0.9;pointer-events:none
 }
-.nav-links .btn:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(245,158,11,0.09)}
 
-.btn-ghost{background:transparent;border:1px solid rgba(11,18,32,0.06);padding:6px 10px;border-radius:8px;margin-left:8px;color:var(--text-dark,#0b1220)}
-.user-name{margin-left:12px;font-weight:600;color:var(--text-dark,#0b1220)}
+.brand{font-weight:800;color:var(--muted-white);text-decoration:none;letter-spacing:0.6px}
+.site-nav .brand{display:inline-block;padding:8px 12px;border-radius:8px;background:linear-gradient(180deg, rgba(212,175,55,0.06), rgba(212,175,55,0.02));border:1px solid rgba(212,175,55,0.06);color:var(--muted-white)}
+
+.nav-links{display:flex;align-items:center;gap:12px}
+.nav-links a{color:var(--muted-white);text-decoration:none;display:inline-flex;align-items:center;gap:8px;font-weight:600}
+
+.nav-links .btn{background:linear-gradient(90deg,var(--gold), #caa73a);color:var(--bg-deep);padding:8px 12px;border-radius:12px;border:1px solid var(--border-gold);box-shadow:0 8px 30px rgba(212,175,55,0.08)}
+.nav-links .btn:hover{transform:translateY(-3px)}
+
+.btn-ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:6px 10px;border-radius:10px;margin-left:8px;color:var(--muted-white)}
+.user-name{margin-left:12px;font-weight:600;color:var(--muted-white)}
 
 /* Avatar / user display */
-.user-avatar{width:34px;height:34px;border-radius:50%;overflow:hidden;border:2px solid rgba(245,158,11,0.12);box-shadow:0 4px 14px rgba(11,18,32,0.06);display:inline-block;vertical-align:middle}
+.user-avatar{width:34px;height:34px;border-radius:50%;overflow:hidden;border:1px solid rgba(255,255,255,0.06);box-shadow:0 6px 18px rgba(2,8,18,0.6);display:inline-block;vertical-align:middle}
 .user-avatar img{display:block;width:100%;height:100%;object-fit:cover}
 
-/* Quick action icons (top-right) */
-.quick-actions{display:flex;align-items:center;gap:18px;margin-left:16px}
-.action-item{display:flex;flex-direction:column;align-items:center;justify-content:center;color:#6b7280;text-decoration:none;font-size:12px}
-.action-item .label{margin-top:6px;display:block;color:inherit;font-size:11px}
-.action-item svg{transition:color 150ms ease, transform 150ms ease;stroke:currentColor}
-.action-item:hover{color:#374151}
-.action-item:focus{outline:2px solid rgba(55,65,81,0.08);outline-offset:2px}
-
-/* Keep spacing and alignment on small screens */
-@media(max-width:800px){
-  .quick-actions{gap:12px}
-  .action-item .label{display:none}
-  .site-nav{border-bottom:3px solid rgba(15,23,42,0.06)}
-}
-
 /* icon styling inside nav links */
-.nav-icon{display:inline-flex;align-items:center;justify-content:center;margin-right:8px;vertical-align:middle;color:var(--gold,#f59e0b)}
-.nav-links .btn .nav-icon{color:inherit}
+.nav-icon{display:inline-flex;align-items:center;justify-content:center;margin-right:6px;vertical-align:middle;color:var(--gold)}
 .nav-links a:hover .nav-icon{transform:translateY(-2px)}
 
 /* Sticky when scrolled: subtle shadow & stronger accent */
-.site-nav.scrolled{box-shadow:0 10px 40px rgba(16,24,40,0.08);background-image:linear-gradient(180deg,#ffffff,#f8f9fb);}
-.site-nav.scrolled .brand{background:rgba(245,158,11,0.06)}
+.site-nav.scrolled{box-shadow:0 12px 40px rgba(2,8,18,0.6);background:linear-gradient(180deg, rgba(5,6,10,0.9), rgba(5,6,10,0.6))}
 
-/* Ensure the navbar background stretches edge-to-edge while the inner content aligns with site container */
-.site-nav > .container{max-width:1200px;margin:0 auto;padding:0 18px}
+/* Responsive adjustments */
+@media(max-width:900px){
+  .nav-links a{font-size:14px}
+  .site-nav .brand{padding:6px 10px}
+}
 
-/* reset body margin if present to avoid unexpected gaps */
+@media(max-width:700px){
+  .nav-links{gap:8px}
+  .nav-links a{display:none}
+  .nav-links a.btn{display:inline-flex}
+}
+
+/* ensure body reset */
 html,body{margin:0;padding:0}

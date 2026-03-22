@@ -344,29 +344,7 @@ export default function Listings(){
             )
           })}
 
-          <h4 style={{margin:'16px 0 8px 0'}}>Нэмэлт (VIP)</h4>
-          {gers.map(g => {
-            const checked = selectedItems.some(s => s.id === g.id)
-            return (
-              <label key={g.id} className={`listing small ${checked ? 'selected' : ''}`} style={{display:'flex',alignItems:'center',gap:12}}>
-                <input type="checkbox" checked={checked} onChange={() => {
-                  if(checked){
-                    setSelectedItems(prev => prev.filter(p => p.id !== g.id))
-                    setSelectedDatesMap(prev => { const next = { ...prev }; delete next[g.id]; return next })
-                    setBookedDaysMap(prev => { const next = { ...prev }; delete next[g.id]; return next })
-                  } else {
-                    setSelectedItems(prev => [...prev, g])
-                    setSelectedDatesMap(prev => ({ ...prev, [g.id]: [] }))
-                    loadBookingsFor(g)
-                  }
-                }} />
-                <div className="listing-body" style={{flex:1}}>
-                  <h4 style={{margin:'0'}}>{g.title}</h4>
-                  <p style={{margin:'0'}}>{g.location} — {formatMNT(g.pricePerNight)}</p>
-                </div>
-              </label>
-            )
-          })}
+          {/* Removed extra "Нэмэлт (VIP)" section per request */}
           {gers.length === 0 && <p>Одоогоор бодит жагсаалт алга байна.</p>}
         </div>
 

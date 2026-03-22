@@ -59,7 +59,7 @@ export default function Nav(){
             <svg viewBox="0 0 24 24" width="18" height="18" strokeWidth="1.5" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15V6a2 2 0 0 0-2-2H7L3 6v9a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2z"/><path d="M7 10h8M7 14h5"/></svg>
           </span>Мэдээ мэдээлэл</a>
           <a href="/mongol">Монгол орны тухай</a>
-          <a href="/darhad">Дархад тайга, Хөвсгөл</a>
+          {/* Darhad link removed */}
           <a href="/programs"><span className="nav-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" width="18" height="18" strokeWidth="1.5" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
           </span>Аяллын хөтөлбөр</a>
