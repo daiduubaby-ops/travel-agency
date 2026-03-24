@@ -1,215 +1,191 @@
-import React, { Suspense, useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import './Landing.css'
 
-function FeatureList(){
-  const [items, setItems] = useState(null)
-  useEffect(() => {
-    let mounted = true
-    async function load(){
-      try{
-        const res = await fetch('/api/features')
-        if(!res.ok){ setItems([]); return }
-        const data = await res.json()
-        if(!mounted) return
-        setItems(data)
-      }catch(e){ setItems([]) }
-    }
-    load()
-    return () => { mounted = false }
-  }, [])
+// Inline SVG icons to avoid extra assets
+const IconHeritage = () => (
+  <svg viewBox="0 0 24 24" width="28" height="28" fill="none" aria-hidden>
+    <path d="M3 12h18" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    <path d="M6 7h12v10H6z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+)
+const IconLandscape = () => (
+  <svg viewBox="0 0 24 24" width="28" height="28" fill="none" aria-hidden>
+    <path d="M3 16c3-3 5-5 9-5s6 2 9 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    <circle cx="8" cy="8" r="2" stroke="currentColor" strokeWidth="1.6" />
+  </svg>
+)
+const IconHospitality = () => (
+  <svg viewBox="0 0 24 24" width="28" height="28" fill="none" aria-hidden>
+    <path d="M12 3v6l4 2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M21 12v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+)
+const IconAdventure = () => (
+  <svg viewBox="0 0 24 24" width="28" height="28" fill="none" aria-hidden>
+    <path d="M3 21l9-18 9 18H3z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+)
 
-  if(items === null) return <div>Ачааллаж байна…</div>
-  if(!items || items.length === 0){
-    // fallback static cards (original hardcoded content)
-    const fallback = [
-      { id:1, title: 'Дэлхийд үлдсэн цорын ганц нүүдэл', lead: 'Монголчуудын өвөрмөц нүүдэлчин соёл — түүх, амьдрал, хэв маяг.', description: 'Бусад улсаас юугаар ялгарах вэ? Бид дэлхий дээрх цорын ганц нүүдэлч соёлыг хадгалж, уламжлалыг хойч үедээ дамжуулсаар ирсэн.', image: '/public/uploads/1772949320319-1fx3x0.jpg' },
-      { id:2, title: 'Эрдэнийн чулуун мэт Монгол гэр', lead: 'Уламжлалт гөр, илбэн доторх дулаан.', description: 'Гэр бол зөвхөн байр биш — энэ нь хувь хүний түүх, ур чадвар, гэр бүлийн уламжлалыг илэрхийлдэг билээ.', image: '/public/uploads/1772799338849-mom9n0.jpg' },
-      { id:3, title: 'Цагаан дарь эхийн хорго', lead: 'Соёл, сүсэг, түүх нэг дор.', description: 'Хожмын зочдод зориулсан соёлын аялал, бясалгал болон нутгийн домог түүхүүд — амралт зөвхөн биеийн бус сэтгэлийн ч өртөг болно.', image: '/public/uploads/1772800220860-gjx19c.jpg' }
-    ]
-    return fallback.map(f => (
-      <article key={f.id} className="feature-card" role="listitem">
-        <div className="feature-img" style={{ backgroundImage: `url('${f.image}')` }} aria-hidden />
-        <div className="feature-body">
-          <h3 className="feature-title">{f.title}</h3>
-          <p className="feature-lead">{f.lead}</p>
-          <p className="feature-desc">{f.description}</p>
-        </div>
-      </article>
-    ))
-  }
+// Use bundled hero image that matches the reference design
+const sampleHero = '/public/home-hero.jpg'
+const categoryImgs = [
+  '/public/uploads/1772799338849-mom9n0.jpg',
+  '/public/uploads/1772800220860-gjx19c.jpg',
+  '/public/uploads/1772810636346-m39do1.jpg'
+]
 
-  return items.map(f => (
-    <article key={f.id} className="feature-card" role="listitem">
-      <div className="feature-img" style={{ backgroundImage: f.image ? `url('${f.image}')` : undefined }} aria-hidden />
-      <div className="feature-body">
-        <h3 className="feature-title">{f.title}</h3>
-        <p className="feature-lead">{f.lead}</p>
-        <p className="feature-desc">{f.description}</p>
+const tours = [
+  { id:1, image:'/public/uploads/1772800244233-0dhlna.jpg', title:'Хоньчин болон Монгол гэрийн тур', price:'$320', rating:4.8, tags:['Хэнтий','3 өдөр'] },
+  { id:2, image:'/public/uploads/1772797589684-0cvvp1.jpg', title:'Өргөн талын морьт аялал', price:'$480', rating:4.9, tags:['Төв аймаг','5 өдөр'] },
+  { id:3, image:'/public/uploads/1772896080646-0wbjw0.jpg', title:'Хангайн нуруу, нуурын аялал', price:'$395', rating:4.7, tags:['Хангай','4 өдөр'] }
+]
+
+function SearchBar(){
+  const [place, setPlace] = useState('')
+  const [type, setType] = useState('Бүх төрөл')
+  const [date, setDate] = useState('')
+  return (
+    <form className="searchbar" onSubmit={(e)=>e.preventDefault()} role="search">
+      <div className="field">
+        <label className="sr-only">Очих газар</label>
+        <input value={place} onChange={e=>setPlace(e.target.value)} placeholder="Очих газар" />
       </div>
-    </article>
-  ))
+      <div className="field">
+        <label className="sr-only">Аяллын төрөл</label>
+        <select value={type} onChange={e=>setType(e.target.value)}>
+          <option>Бүх төрөл</option>
+          <option>Соёлын аялал</option>
+          <option>Адал явдал</option>
+          <option>Байгалийн аялал</option>
+        </select>
+      </div>
+      <div className="field">
+        <label className="sr-only">Хугацаа</label>
+        <input type="date" value={date} onChange={e=>setDate(e.target.value)} />
+      </div>
+      <button className="cta" aria-label="Аялал хайх">Аялал хайх</button>
+    </form>
+  )
 }
 
-// lazy load Programs to keep initial bundle small
-const Programs = React.lazy(() => import('./Programs'))
-
 export default function Landing(){
-  // allow local image previews for the three example listings
-  // default hero image: use an existing upload so the landing shows the forest
-  // background immediately (user requested the hero background to match the
-  // provided forest image without changing any text). This uses a file that
-  // already exists in backend/public/uploads so no new asset is required.
-  const [images, setImages] = useState([null, null, null])
-  const [hero, setHero] = useState('/public/uploads/1772949320319-1fx3x0.jpg')
-
-  useEffect(() => {
-    // cleanup object URLs on unmount
-    return () => {
-      images.forEach(url => {
-        if (url) URL.revokeObjectURL(url)
-      })
-    }
-  }, [images])
-
-  useEffect(() => {
-    // fetch server-provided hero image if available
-    let mounted = true
-    async function loadHero(){
-      try{
-        const res = await fetch('/public/home-hero.jpg')
-        if(!res.ok) return
-        // we can directly use the public path (same origin) or createObjectURL
-        if(!mounted) return
-        setHero('/public/home-hero.jpg')
-      }catch(e){ /* ignore */ }
-    }
-    loadHero()
-    return () => { mounted = false }
-  }, [])
-
-  const handleImageChange = (index, e) => {
-    const file = e.target.files && e.target.files[0]
-    if (!file) return
-    // revoke previous url if exists
-    setImages(prev => {
-      const next = [...prev]
-      if (next[index]) URL.revokeObjectURL(next[index])
-      next[index] = URL.createObjectURL(file)
-      return next
-    })
-  }
-
   return (
-    <div className="landing dark">
-      {/* HERO */}
-      <header
-        className={`hero hero-dark ${hero ? 'has-hero' : ''}`}
-        style={ hero ? { backgroundImage: `url(${hero})` } : undefined }
-      >
-        <div className="hero-overlay" />
-        <div className="hero-inner container">
-          <nav aria-hidden className="hero-topbar">
-            {/* decorative thin gold line */}
-            <div className="gold-line" />
-          </nav>
+    <div className="mongol-landing">
+      <header className="hero has-hero" style={{ backgroundImage: `url(${sampleHero})` }}>
+        <div className="overlay" />
+        <div className="container hero-inner">
+          {/* Top navigation removed as requested */}
 
-          <div className="hero-center">
-            <h1 className="hero-title">ADVENTURE</h1>
-            <p className="hero-sub">Discover remote places, cinematic landscapes and the luxury of true solitude.</p>
-            <div className="hero-cta">
-              <a className="btn btn-primary btn-hero" href="/listings">Book an experience</a>
-              <a className="btn btn-outline" href="/programs">View programs</a>
+          <div className="hero-content" role="region" aria-label="Hero">
+            <h1 className="headline">
+              <span className="line1">Монгол орны хязгааргүй уудамд</span>
+              <span className="accent">Мартагдашгүй дурсамжийг</span>
+            </h1>
+            <div className="hero-subwrap">
+              <p className="sub">Эртний соёл • Байгалийн гайхамшиг • Адал явдал</p>
+              <div className="hero-note">⭐ 2025 оны зуны улирлын захиалга эхэллээ • Эрт бүртгүүлсэнд <strong className="gold">10% хөнгөлөлт</strong></div>
             </div>
+            {/* decorative underline */}
+            <svg className="hero-divider" width="220" height="18" viewBox="0 0 220 18" aria-hidden>
+              <path d="M4 9c30-18 50-4 80 0s50-14 80 0" fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.9" />
+            </svg>
+          </div>
 
-            <ul className="hero-features" role="list">
-              <li>Curated expeditions</li>
-              <li>Private guides & bespoke services</li>
-              <li>Comfortable high-end camps</li>
-            </ul>
+          {/* floating glass-like search bar positioned over bottom edge of hero */}
+          <div className="search-float glass-search" role="search">
+            <SearchBar />
           </div>
         </div>
       </header>
 
-      {/* The Wonders of Nature */}
-      <section className="wonders container">
-        <h2>The Wonders of Nature</h2>
-        <p className="section-lead">Handpicked destinations that showcase raw landscapes and immersive experiences.</p>
-
-        <div className="dest-grid">
-          {["1772949320319-1fx3x0.jpg","1772799338849-mom9n0.jpg","1772800220860-gjx19c.jpg","1772800244233-0dhlna.jpg"].map((fn, idx) => (
-            <article key={idx} className="dest-card">
-              <div className="dest-media" style={{ backgroundImage: `url('/public/uploads/${fn}')` }} aria-hidden />
-              <div className="dest-body">
-                <h3>Destination {idx + 1}</h3>
-                <p className="muted">A short enticing sentence that hints at discovery and serenity.</p>
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      {/* Reasons */}
-      <section className="reasons">
-        <div className="container">
-          <h2>Reason For Choosing Us</h2>
-          <div className="reasons-grid">
-            {[
-              { title:'Expert Guides', desc:'Local experts with decades of experience.' },
-              { title:'Luxury Camps', desc:'Comfort in the wild — elevated camps and dining.' },
-              { title:'Sustainable Travel', desc:'We protect the places we visit.' },
-              { title:'Tailor-made', desc:'Personalized itineraries for discerning travelers.' }
-            ].map((r,i) => (
-              <div key={i} className="reason">
-                <div className="reason-icon" aria-hidden>
-                  <svg viewBox="0 0 48 48" width="36" height="36" fill="none"><circle cx="24" cy="24" r="22" stroke="currentColor" strokeWidth="2"/></svg>
-                </div>
-                <h4>{r.title}</h4>
-                <p className="muted">{r.desc}</p>
-              </div>
+      <main>
+        <section className="categories container">
+          <h2>Категори</h2>
+          <div className="cards">
+            {[{title:'Соёлын аялал', img:categoryImgs[0]}, {title:'Адал явдал', img:categoryImgs[1]}, {title:'Байгалийн аялал', img:categoryImgs[2]}].map((c,i)=> (
+              <article key={i} className="cat-card" style={{ backgroundImage: `url(${c.img})` }}>
+                <div className="card-overlay" />
+                <h3>{c.title}</h3>
+              </article>
             ))}
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Split layout promotional */}
-      <section className="promo container split">
-        <div className="split-media">
-          <div className="stacked" style={{ backgroundImage:`url('/public/uploads/1772810636346-m39do1.jpg')` }} />
-          <div className="stacked" style={{ backgroundImage:`url('/public/uploads/1772797589684-0cvvp1.jpg')` }} />
-        </div>
-        <div className="split-copy">
-          <h3>Journey Beyond the Ordinary</h3>
-          <p className="muted">Join small group departures or enjoy private expeditions designed to reveal the heart of wild places.</p>
-          <a className="btn btn-primary" href="/bookings">Start your booking</a>
-        </div>
-      </section>
-
-      {/* Explore large forest background with overlay graphic */}
-      <section className="explore">
-        <div className="explore-bg" style={{ backgroundImage: `url('/public/uploads/1772896450896-kvp8jn.jpg')` }}>
-          <div className="explore-overlay">
-            <svg className="explore-graph" viewBox="0 0 800 200" preserveAspectRatio="none" aria-hidden>
-              <polyline points="0,140 80,100 160,120 240,60 320,80 400,40 480,52 560,30 640,60 720,20 800,40" fill="none" strokeWidth="2" stroke="rgba(255,215,150,0.85)" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            <div className="explore-copy">
-              <h3>Explore The Nature With Us</h3>
-              <p className="muted">Cinematic routes, editorial storytelling and photography-led experiences.</p>
+        <section className="why container">
+          <h2>Яагаад Хөвсгөл аймгийн Ханх сумыг сонгох вэ?</h2>
+          <div className="why-grid">
+            <div className="why-item">
+              <div className="icon"><IconHeritage /></div>
+              <h4>Сүрлэг байгаль</h4>
+              <p>Хөвсгөл нуур, тайга, уулс хосолсон онцгой тогтоц нь аялагч бүрт мартагдашгүй мэдрэмж төрүүлнэ.</p>
+            </div>
+            <div className="why-item">
+              <div className="icon"><IconLandscape /></div>
+              <h4>Нүүдлийн соёл</h4>
+              <p>Орон нутгийн өв уламжлал, ахуй амьдрал нь Монголын жинхэнэ өнгө төрхийг мэдрэх боломж олгоно.</p>
+            </div>
+            <div className="why-item">
+              <div className="icon"><IconHospitality /></div>
+              <h4>Тайван амралт</h4>
+              <p>Цэвэр агаар, нам гүм орчин, байгалийн тэнцвэрт уур амьсгал нь бие сэтгэлийг амраах төгс нөхцөл бүрдүүлдэг.</p>
+            </div>
+            <div className="why-item">
+              <div className="icon"><IconAdventure /></div>
+              <h4>Адал явдал</h4>
+              <p>Явган аялал, уулын маршрут, нуур орчмын аялал зэрэг сонирхол татам туршлагууд таныг хүлээж байдаг.</p>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <footer className="site-footer dark-footer">
+        <section id="tours" className="tours container">
+          <h2>Популяр Аялалууд</h2>
+          <div className="tour-grid">
+            {tours.map(t => (
+              <article key={t.id} className="tour-card">
+                <div className="tour-media" style={{ backgroundImage: `url(${t.image})` }}>
+                  <div className="price">{t.price}</div>
+                </div>
+                <div className="tour-body">
+                  <h3>{t.title}</h3>
+                  <div className="meta">
+                    <div className="rating">{'★'.repeat(Math.round(t.rating))} <span className="muted">{t.rating}</span></div>
+                    <div className="tags">{t.tags.map((tg,i)=>(<span key={i} className="tag">{tg}</span>))}</div>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="testimonial">
+          <div className="container">
+            <div className="testimonial-card">
+              <img className="avatar" src="/public/uploads/1772810257164-l1mxwp.png" alt="user avatar" />
+              <blockquote>"Монголын тал нутагт бид амьдралын хамгийн чөлөөт, мартагдашгүй хайрыг мэдэрсэн. Хөтөч, гэр бүл — бүх зүйл төгс байлаа."</blockquote>
+              <cite> — Н. Бат</cite>
+            </div>
+          </div>
+        </section>
+
+        {/* Newsletter section removed as requested */}
+
+      </main>
+
+      <footer className="footer">
         <div className="container footer-inner">
-          <div className="brand-row">
-            <a className="brand" href="/">Khankh Tour</a>
-            <div className="socials">
-              <a aria-label="instagram" href="#">IG</a>
-              <a aria-label="facebook" href="#">FB</a>
+          <div className="col">
+            <h4>Монгол Аялал</h4>
+            <p className="muted">Утас: +976 00 000000<br/>И-мэйл: info@mongolayalal.mn</p>
+          </div>
+          <div className="col social">
+            <h4>Бидэнтэй холбогдоно уу</h4>
+            <div className="icons">
+              <a href="#" aria-label="facebook">FB</a>
+              <a href="#" aria-label="instagram">IG</a>
             </div>
           </div>
-          <small className="muted">© {new Date().getFullYear()} Khankh Tour — All rights reserved</small>
         </div>
+        <div className="footer-bottom">© {new Date().getFullYear()} Монгол Аялал — Бүх эрх хуулиар хамгаалагдсан</div>
       </footer>
     </div>
   )

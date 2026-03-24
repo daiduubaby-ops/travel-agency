@@ -3,7 +3,7 @@ import './Landing.css'
 
 export default function Mongol(){
   return (
-    <div className="page container" style={{padding: '2rem'}}>
+    <div className="page container mongol-landing" style={{padding: '2rem'}}>
       <h1>Монгол орны тухай</h1>
       <p>Монгол орон нь өргөн уудам, байгалийн өвөрмөц олон төрлийн бүстэй. Цөл, тал, уул, ой, нуур гээд олон төрлийн байршилтай бөгөөд түүх, соёлын гайхамшигтай өвүүдтэй юм.</p>
       <h2>Онцлох бүсүүд</h2>
