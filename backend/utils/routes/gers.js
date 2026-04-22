@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { getDb } = require('../utils/db');
-const { auth, adminOnly } = require('../middleware/auth');
+const { getDb } = require('../db');
+const { auth, adminOnly } = require('../../middleware/auth');
 
 // List gers with simple filters
 router.get('/', async (req, res) => {

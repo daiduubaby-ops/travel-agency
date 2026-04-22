@@ -1,2 +1,40 @@
 .dashboard{padding:24px}
-.dashboard .container{max-width:900px;margin:0 auto}
+.dashboard .container{max-width:1100px;margin:0 auto}
+
+.dashboard-title{margin:0 0 12px 0}
+.dashboard-section{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px}
+.user-info-card{background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;padding:12px;margin-bottom:14px}
+
+.loading-text{color:#475569}
+.error-text{color:#b91c1c}
+.success-text{color:#0b8457}
+.empty-text{color:#6b7280}
+
+.admin-shell{display:grid;grid-template-columns:240px 1fr;gap:18px;align-items:start}
+.admin-sidebar{position:sticky;top:92px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.admin-sidebar h3{margin:0 0 4px 0;font-size:16px}
+.admin-nav-btn{border:1px solid #e5e7eb;background:#fff;padding:10px 12px;border-radius:10px;text-align:left;cursor:pointer;font-weight:600}
+.admin-nav-btn.active{background:#0ea5a7;color:#fff;border-color:#0ea5a7}
+.admin-nav-btn{display:flex;align-items:center;gap:8px;justify-content:space-between}
+.admin-nav-icon{font-size:14px;opacity:.95}
+.admin-nav-badge{margin-left:auto;background:#eef2ff;color:#1d4ed8;border-radius:999px;padding:2px 8px;font-size:12px;font-weight:700}
+.admin-nav-btn.active .admin-nav-badge{background:rgba(255,255,255,.2);color:#fff}
+
+.admin-content{min-width:0}
+.admin-table th,.admin-table td{font-size:14px}
+.admin-header-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}
+.admin-breadcrumb{font-size:12px;color:#64748b;margin-bottom:6px}
+.admin-header-actions{display:flex;gap:8px;align-items:center}
+.admin-kpi{background:#f8fafc;border:1px solid #e2e8f0;padding:8px 10px;border-radius:10px;font-size:13px;color:#334155}
+
+@media (max-width: 900px){
+  .admin-shell{grid-template-columns:1fr}
+  .admin-sidebar{position:static}
+  .admin-header-row{flex-direction:column}
+}
+
+/* Make admin sidebar collapsible on very small screens by stacking */
+@media (max-width: 480px){
+  .admin-sidebar{display:flex;flex-direction:row;gap:8px;overflow:auto;padding:8px}
+  .admin-nav-btn{white-space:nowrap;padding:8px 10px;border-radius:8px}
+}

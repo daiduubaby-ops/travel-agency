@@ -2,6 +2,8 @@ const jwt = require('jsonwebtoken');
 
 function auth(req, res, next) {
   const header = req.headers.authorization;
+  // log incoming auth header for debugging token issues
+  try { console.log('auth middleware header=', header) } catch (e) {}
   if (!header) return res.status(401).json({ message: 'No token provided' });
 
   const token = header.split(' ')[1];
@@ -10,6 +12,8 @@ function auth(req, res, next) {
     req.user = payload;
     next();
   } catch (err) {
+    // log verification error to server console to help debugging
+    try { console.error('auth middleware jwt.verify error:', err && err.message) } catch (e) {}
     return res.status(401).json({ message: 'Invalid token' });
   }
 }

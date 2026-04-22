@@ -1,5 +1,6 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import './Landing.css'
+import Programs from './Programs'
 
 // Inline SVG icons to avoid extra assets
 const IconHeritage = () => (
@@ -26,8 +27,16 @@ const IconAdventure = () => (
   </svg>
 )
 
-// Use bundled hero image that matches the reference design
-const sampleHero = '/public/home-hero.jpg'
+// Use bundled hero image that matches the reference design.
+// Prefer the backend static URL (VITE_API_URL) when available so the
+// hero loads even when the frontend is served separately from the backend.
+const API_BASE = import.meta.env?.VITE_API_URL || 'http://localhost:5000'
+const sampleHero = `${API_BASE}/public/home-hero.jpg`
+
+// The hero image can be replaced by an admin via the admin UI which
+// uploads to /api/upload/home and the server writes it to
+// backend/public/home-hero.jpg. Load the image dynamically so the
+// landing page uses the admin-updated image when present.
 const categoryImgs = [
   '/public/uploads/1772799338849-mom9n0.jpg',
   '/public/uploads/1772800220860-gjx19c.jpg',
@@ -40,79 +49,108 @@ const tours = [
   { id:3, image:'/public/uploads/1772896080646-0wbjw0.jpg', title:'Хангайн нуруу, нуурын аялал', price:'$395', rating:4.7, tags:['Хангай','4 өдөр'] }
 ]
 
-function SearchBar(){
-  const [place, setPlace] = useState('')
-  const [type, setType] = useState('Бүх төрөл')
-  const [date, setDate] = useState('')
-  return (
-    <form className="searchbar" onSubmit={(e)=>e.preventDefault()} role="search">
-      <div className="field">
-        <label className="sr-only">Очих газар</label>
-        <input value={place} onChange={e=>setPlace(e.target.value)} placeholder="Очих газар" />
-      </div>
-      <div className="field">
-        <label className="sr-only">Аяллын төрөл</label>
-        <select value={type} onChange={e=>setType(e.target.value)}>
-          <option>Бүх төрөл</option>
-          <option>Соёлын аялал</option>
-          <option>Адал явдал</option>
-          <option>Байгалийн аялал</option>
-        </select>
-      </div>
-      <div className="field">
-        <label className="sr-only">Хугацаа</label>
-        <input type="date" value={date} onChange={e=>setDate(e.target.value)} />
-      </div>
-      <button className="cta" aria-label="Аялал хайх">Аялал хайх</button>
-    </form>
-  )
-}
+// Search bar component removed per request
 
 export default function Landing(){
+  const [hero, setHero] = useState(sampleHero)
+
+  useEffect(() => {
+    let mounted = true
+    // try fetch the backend-served hero (proxy in dev -> /public/home-hero.jpg)
+    // try absolute backend URL first (works when backend is running),
+    // then fall back to proxied /public path which is handled by Vite proxy.
+    fetch(`${API_BASE}/public/home-hero.jpg`, { method: 'HEAD' }).then(res => {
+      if(!mounted) return
+      if(res.ok) setHero(`${API_BASE}/public/home-hero.jpg`)
+    }).catch(()=>{/* ignore */})
+    // second attempt: try proxied path (dev server proxy)
+    .finally(() => {
+      fetch('/public/home-hero.jpg', { method: 'HEAD' }).then(res => {
+        if(!mounted) return
+        if(res.ok && hero !== '/public/home-hero.jpg') setHero('/public/home-hero.jpg')
+      }).catch(()=>{/* ignore */})
+    })
+    return () => { mounted = false }
+  }, [])
+
   return (
     <div className="mongol-landing">
-      <header className="hero has-hero" style={{ backgroundImage: `url(${sampleHero})` }}>
+      {/* Use an explicit inline background-image as a fallback so the hero image
+          is visible even if CSS custom properties are not applied by the
+          environment/proxy. This ensures the background shows during dev. */}
+      <header
+        className="hero has-hero half-hero"
+        style={{
+          backgroundImage: `linear-gradient(180deg, rgba(3,37,65,0.22), rgba(3,37,65,0.06)), url(${hero})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }}
+      >
+        {/* Fallback <img> to ensure hero shows even if background-image is blocked
+            or not applied in certain environments (helps during development). */}
+        <img
+          src={hero}
+          alt="hero"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            zIndex: 0,
+            pointerEvents: 'none'
+          }}
+        />
         <div className="overlay" />
+
         <div className="container hero-inner">
-          {/* Top navigation removed as requested */}
-
           <div className="hero-content" role="region" aria-label="Hero">
-            <h1 className="headline">
-              <span className="line1">Монгол орны хязгааргүй уудамд</span>
-              <span className="accent">Мартагдашгүй дурсамжийг</span>
-            </h1>
-            <div className="hero-subwrap">
-              <p className="sub">Эртний соёл • Байгалийн гайхамшиг • Адал явдал</p>
-              <div className="hero-note">⭐ 2025 оны зуны улирлын захиалга эхэллээ • Эрт бүртгүүлсэнд <strong className="gold">10% хөнгөлөлт</strong></div>
-            </div>
-            {/* decorative underline */}
-            <svg className="hero-divider" width="220" height="18" viewBox="0 0 220 18" aria-hidden>
-              <path d="M4 9c30-18 50-4 80 0s50-14 80 0" fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.9" />
-            </svg>
-          </div>
-
-          {/* floating glass-like search bar positioned over bottom edge of hero */}
-          <div className="search-float glass-search" role="search">
-            <SearchBar />
+            {/* Hero overlay text removed as requested - keep structure for layout */}
+            <div className="hero-copy" aria-hidden />
           </div>
         </div>
       </header>
 
-      <main>
-        <section className="categories container">
-          <h2>Категори</h2>
-          <div className="cards">
-            {[{title:'Соёлын аялал', img:categoryImgs[0]}, {title:'Адал явдал', img:categoryImgs[1]}, {title:'Байгалийн аялал', img:categoryImgs[2]}].map((c,i)=> (
-              <article key={i} className="cat-card" style={{ backgroundImage: `url(${c.img})` }}>
-                <div className="card-overlay" />
-                <h3>{c.title}</h3>
-              </article>
-            ))}
-          </div>
-        </section>
+      {/* Featured program cards that visually overlap the hero (like the reference) */}
+      <div className="hero-programs container" aria-hidden>
+        <div className="hero-cards">
+          {tours.slice(0,4).map(t => (
+            <article key={t.id} className="program-card hero-card">
+              <div className="program-media" aria-hidden>
+                <img src={t.image} alt="" />
+                <div className="badge-top">JOINME.MN ОНЦЛОХ</div>
+              </div>
+              <div className="program-body">
+                <div className="program-head">
+                  <h3>{t.title}</h3>
+                </div>
+                <div className="program-meta">
+                  <div className="program-location"><span className="icon">📍</span> {t.tags && t.tags[0]}</div>
+                </div>
+                <div className="program-footer">
+                  <div>
+                    <div style={{fontSize:12,color:'#6b7280'}}>Эхлэх үнэ</div>
+                    <div style={{fontWeight:800,fontSize:20}}>{t.price}</div>
+                  </div>
+                  <div className="program-actions">
+                    <a className="btn btn-outline" href="/programs">Дэлгэрэнгүй</a>
+                    <a className="btn btn-primary" href="/programs">Захиалах</a>
+                  </div>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
 
+        <div style={{textAlign:'center', marginTop:22}}>
+          <a className="btn btn-primary" href="/programs">Бүгдийг үзэх</a>
+        </div>
+      </div>
+
+      <main>
         <section className="why container">
-          <h2>Яагаад Хөвсгөл аймгийн Ханх сумыг сонгох вэ?</h2>
+          <h2>Яагаад Хөвсгөл аймгийг сонгох вэ?</h2>
           <div className="why-grid">
             <div className="why-item">
               <div className="icon"><IconHeritage /></div>
@@ -137,32 +175,16 @@ export default function Landing(){
           </div>
         </section>
 
-        <section id="tours" className="tours container">
-          <h2>Популяр Аялалууд</h2>
-          <div className="tour-grid">
-            {tours.map(t => (
-              <article key={t.id} className="tour-card">
-                <div className="tour-media" style={{ backgroundImage: `url(${t.image})` }}>
-                  <div className="price">{t.price}</div>
-                </div>
-                <div className="tour-body">
-                  <h3>{t.title}</h3>
-                  <div className="meta">
-                    <div className="rating">{'★'.repeat(Math.round(t.rating))} <span className="muted">{t.rating}</span></div>
-                    <div className="tags">{t.tags.map((tg,i)=>(<span key={i} className="tag">{tg}</span>))}</div>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
+        {/* Render programs grid (reuses Programs component) so the landing page shows
+            the same program cards layout as the dedicated Programs page. */}
+        <Programs />
 
         <section className="testimonial">
           <div className="container">
             <div className="testimonial-card">
               <img className="avatar" src="/public/uploads/1772810257164-l1mxwp.png" alt="user avatar" />
               <blockquote>"Монголын тал нутагт бид амьдралын хамгийн чөлөөт, мартагдашгүй хайрыг мэдэрсэн. Хөтөч, гэр бүл — бүх зүйл төгс байлаа."</blockquote>
-              <cite> — Н. Бат</cite>
+              <cite> </cite>
             </div>
           </div>
         </section>
@@ -174,7 +196,7 @@ export default function Landing(){
       <footer className="footer">
         <div className="container footer-inner">
           <div className="col">
-            <h4>Монгол Аялал</h4>
+            <h4>Mongol Ayalal</h4>
             <p className="muted">Утас: +976 00 000000<br/>И-мэйл: info@mongolayalal.mn</p>
           </div>
           <div className="col social">
@@ -185,7 +207,7 @@ export default function Landing(){
             </div>
           </div>
         </div>
-        <div className="footer-bottom">© {new Date().getFullYear()} Монгол Аялал — Бүх эрх хуулиар хамгаалагдсан</div>
+        <div className="footer-bottom">© {new Date().getFullYear()} — Бүх эрх хуулиар хамгаалагдсан</div>
       </footer>
     </div>
   )

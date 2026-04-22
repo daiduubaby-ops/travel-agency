@@ -23,14 +23,26 @@ async function start() {
     console.log('SQLite DB initialized');
 
     // Routes
-    app.use('/api/auth', require('./routes/auth'));
-    app.use('/api/gers', require('./routes/gers'));
-    app.use('/api/programs', require('./routes/programs'));
-    app.use('/api/bookings', require('./routes/bookings'));
+    // Note: route handlers live under ./utils/routes in this project layout.
+    app.use('/api/auth', require('./utils/routes/auth'));
+    app.use('/api/gers', require('./utils/routes/gers'));
+    app.use('/api/programs', require('./utils/routes/programs'));
+    app.use('/api/bookings', require('./utils/routes/bookings'));
+    // program booking API (tour/program bookings)
+    app.use('/api/program-bookings', require('./utils/routes/program-bookings'));
+    app.use('/api/news', require('./utils/routes/news'));
+    app.use('/api', require('./utils/routes/homeBookings'));
+    
+    // Admin Routes
+    app.use('/api/admin/bookings', require('./utils/routes/admin/bookings'));
+    app.use('/api/admin/programs', require('./utils/routes/admin/programs'));
+    app.use('/api/admin/news', require('./utils/routes/news'));
+
     // features (landing page items)
-    app.use('/api/features', require('./routes/features'));
+    app.use('/api/features', require('./utils/routes/features'));
+    app.use('/api/settings', require('./utils/routes/settings'));
     // upload route and serve uploaded files
-    app.use('/api/upload', require('./routes/upload'));
+    app.use('/api/upload', require('./utils/routes/upload'));
     app.use('/public', express.static(path.join(__dirname, 'public')));
 
     // Serve frontend static files (if frontend was built) and provide SPA fallback.

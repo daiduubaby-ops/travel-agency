@@ -3,9 +3,18 @@ import formatMNT from '../utils/formatCurrency'
 
 export default function BookedListings(){
   const [bookings, setBookings] = useState([])
+  const [homeBookings, setHomeBookings] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [justBooked, setJustBooked] = useState('')
+
+  const LOCAL_HOME_BOOKINGS_KEY = 'localHomeBookings'
+
+  const cancelBtnStyle = {
+    background: '#dc2626',
+    color: '#fff',
+    border: '1px solid #b91c1c'
+  }
 
   async function handleCancel(booking){
     setError('')
@@ -56,8 +65,11 @@ export default function BookedListings(){
       setError('')
       // Load client-side sample bookings first (they may reference sample ger ids)
       const local = JSON.parse(localStorage.getItem('sampleBookings') || '[]')
+      const localHome = JSON.parse(localStorage.getItem(LOCAL_HOME_BOOKINGS_KEY) || '[]')
       const userId = (() => { try { return JSON.parse(localStorage.getItem('user'))?.id } catch { return null } })()
       const localForUser = local.filter(b => !userId || b.userId === userId)
+      const localHomeForUser = localHome.filter(b => !userId || b.userId === userId)
+      setHomeBookings(localHomeForUser)
       try{
         const token = localStorage.getItem('token')
         if(!token){
@@ -96,28 +108,71 @@ export default function BookedListings(){
       <h2>Таны захиалсан жагсаалт</h2>
       {loading && <p>Уншиж байна…</p>}
       {error && <p style={{color:'red'}}>{error}</p>}
-      {!loading && bookings && bookings.length === 0 && <p>Танд ямар ч захиалга байхгүй байна.</p>}
+      {!loading && bookings.length === 0 && homeBookings.length === 0 && <p>Танд ямар ч захиалга байхгүй байна.</p>}
       {justBooked && (
         <p style={{color:'green',background:'#ecfdf5',padding:8,borderRadius:6}}>Захиалга амжилттай нэмэгдлээ.</p>
       )}
-      {!loading && bookings && bookings.length > 0 && (
-        <div style={{display:'grid',gap:12}}>
-          {bookings.map(b => (
-            <div key={b.id} className="listing small">
-              <div className="listing-body">
-                <h4 style={{margin:'0 0 4px 0'}}>{b.ger_title}</h4>
-                <div style={{color:'#6b7280',fontSize:13}}>{b.ger_location} — {formatMNT(b.totalPrice)} — <strong>{b.status}</strong></div>
-                <div style={{fontSize:13,marginTop:6}}>Эхлэх: {new Date(b.checkInDate).toISOString().slice(0,10)} — Дуусах: {new Date(b.checkOutDate).toISOString().slice(0,10)}</div>
-                <div style={{marginTop:6}}><a href={`/booking?id=${b.gerId}`}>Жагсаалтыг үзэх</a></div>
-                {(String(b.id).startsWith('sample') || String(b.gerId).startsWith('sample') || b.status === 'амжилттай') && (
-                  <div style={{marginTop:8}}>
-                    <button className="btn" onClick={() => handleCancel(b)}>{String(b.id).startsWith('sample') || String(b.gerId).startsWith('sample') ? 'Цуцлах' : 'Cancel booking'}</button>
+
+      {!loading && bookings.length > 0 && (
+        <>
+          <h3 style={{marginTop:16}}>Байр / Аяллын захиалга</h3>
+          <div style={{display:'grid',gap:12}}>
+            {bookings.map(b => {
+              const isProgramBooking = String(b.gerId || '').startsWith('sample-program-')
+              const statusLower = String(b.status || '').toLowerCase()
+              const canCancel = statusLower !== 'cancelled' && statusLower !== 'цуцлагдсан'
+              const programId = isProgramBooking ? String(b.gerId).replace('sample-program-', '') : null
+              return (
+                <div key={b.id} className="listing small">
+                  <div className="listing-body">
+                    <h4 style={{margin:'0 0 4px 0'}}>{b.ger_title}</h4>
+                    <div style={{color:'#6b7280',fontSize:13}}>
+                      {b.ger_location || '—'} — {formatMNT(b.totalPrice || 0)} — <strong>{b.status}</strong>
+                    </div>
+                    <div style={{fontSize:13,marginTop:6}}>Төрөл: {isProgramBooking ? 'Аяллын захиалга' : 'Байр захиалга'}</div>
+                    {b.checkInDate && b.checkOutDate && (
+                      <div style={{fontSize:13,marginTop:6}}>
+                        Эхлэх: {new Date(b.checkInDate).toISOString().slice(0,10)} — Дуусах: {new Date(b.checkOutDate).toISOString().slice(0,10)}
+                      </div>
+                    )}
+                    <div style={{marginTop:6}}>
+                      <a href={isProgramBooking && programId ? `/programs/${programId}` : `/booking?id=${b.gerId}`}>
+                        {isProgramBooking ? 'Аяллыг үзэх' : 'Жагсаалтыг үзэх'}
+                      </a>
+                    </div>
+                    {canCancel && (
+                      <div style={{marginTop:8}}>
+                        <button className="btn" style={cancelBtnStyle} onClick={() => handleCancel(b)}>Цуцлах</button>
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
+              )
+            })}
+          </div>
+        </>
+      )}
+
+      {!loading && homeBookings.length > 0 && (
+        <>
+          <h3 style={{marginTop:20}}>Гэрийн үйлчилгээний захиалга</h3>
+          <div style={{display:'grid',gap:12}}>
+            {homeBookings.map(hb => (
+              <div key={hb.id} className="listing small">
+                <div className="listing-body">
+                  <h4 style={{margin:'0 0 4px 0'}}>#{hb.booking_number || hb.id}</h4>
+                  <div style={{color:'#6b7280',fontSize:13}}>
+                    {hb.patient_name || '—'} — <strong>{hb.status || 'pending'}</strong>
+                  </div>
+                  <div style={{fontSize:13,marginTop:6}}>Үйлчилгээ: {hb.service_id || '—'}</div>
+                  <div style={{fontSize:13,marginTop:6}}>Өдөр/цаг: {hb.preferred_date || '—'} {hb.preferred_time || ''}</div>
+                  {hb.address_text && <div style={{fontSize:13,marginTop:6}}>Хаяг: {hb.address_text}</div>}
+                  {hb.admin_note && <div style={{fontSize:13,marginTop:6}}>Тэмдэглэл: {hb.admin_note}</div>}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        </>
       )}
     </div>
   )

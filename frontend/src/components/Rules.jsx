@@ -10,7 +10,7 @@ export default function Rules(){
     <div className="rules-page container">
       <header className="rules-header">
         <div>
-          <h1>АЯЛАЛЫН ЖУРАМ</h1>
+          <h1>АЯЛЛЫН ЖУРАМ</h1>
           <h2>Хөвсгөл нуур — Хөвсгөл ханх — Ой тайгын болон морин аялал</h2>
         </div>
       </header>

@@ -84,32 +84,47 @@ export default function Programs(){
   }
 
   function startBooking(p){
-    try{
-      const local = JSON.parse(localStorage.getItem('sampleBookings') || '[]')
-      const bookingId = `sample-${Date.now()}-${p.id}`
-      const today = new Date()
-      const tomorrow = new Date(today.getTime() + 24*60*60*1000)
-      const booking = {
-        id: bookingId,
-        gerId: `sample-program-${p.id}`,
-        ger_title: p.title,
-        ger_location: p.location,
-        checkInDate: today.toISOString().slice(0,10),
-        checkOutDate: tomorrow.toISOString().slice(0,10),
-        // use numericPrice helper to set the sample booking total from the program price
-        totalPrice: numericPrice(p.price),
-        userId: (() => { try { return JSON.parse(localStorage.getItem('user'))?.id } catch { return null } })()
+    // Attempt to save program bookings on the server. If that fails, fall back to local sample booking
+    (async () => {
+      try{
+        const token = localStorage.getItem('token')
+        if(!token) throw new Error('No token')
+        const today = new Date()
+        const tomorrow = new Date(today.getTime() + 24*60*60*1000)
+        const body = { programId: p.id, checkInDate: today.toISOString().slice(0,10), checkOutDate: tomorrow.toISOString().slice(0,10) }
+        const res = await fetch('/api/program-bookings', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(body) })
+        if(!res.ok) throw new Error('Server booking failed')
+        const data = await res.json()
+        // success — redirect to booked page showing the newly created booking
+        const qp = `?success=1&added=${encodeURIComponent(data.id)}`
+        window.location.href = `/booked${qp}`
+      }catch(err){
+        console.warn('server booking failed, falling back to local sample booking', err)
+        try{
+          const local = JSON.parse(localStorage.getItem('sampleBookings') || '[]')
+          const bookingId = `sample-${Date.now()}-${p.id}`
+          const today = new Date()
+          const tomorrow = new Date(today.getTime() + 24*60*60*1000)
+          const booking = {
+            id: bookingId,
+            gerId: `sample-program-${p.id}`,
+            ger_title: p.title,
+            ger_location: p.location,
+            checkInDate: today.toISOString().slice(0,10),
+            checkOutDate: tomorrow.toISOString().slice(0,10),
+            totalPrice: numericPrice(p.price),
+            userId: (() => { try { return JSON.parse(localStorage.getItem('user'))?.id } catch { return null } })()
+          }
+          local.push(booking)
+          localStorage.setItem('sampleBookings', JSON.stringify(local))
+          const qp = `?success=1&added=${encodeURIComponent(booking.id)}`
+          window.location.href = `/booked${qp}`
+        }catch(e){
+          console.error(e)
+          window.location.href = `/booked?success=1`
+        }
       }
-      local.push(booking)
-      localStorage.setItem('sampleBookings', JSON.stringify(local))
-      // navigate to booked listings and show a success message
-      const qp = `?success=1&added=${encodeURIComponent(booking.id)}`
-      window.location.href = `/booked${qp}`
-    }catch(e){
-      console.error(e)
-      // fallback: just navigate
-      window.location.href = `/booked?success=1`
-    }
+    })()
   }
 
   if(id){
@@ -224,7 +239,7 @@ export default function Programs(){
     <section className="programs" aria-labelledby="programs-heading">
       <div className="container">
         <h2 id="programs-heading" className="programs-title">Аяллын хөтөлбөр</h2>
-        <p className="programs-lead">Манай хамгийн алдартай аяллын багцууд — хугацаа, төрөл, үнэ нь тодорхой, та амархан сонгож захиалж болно.</p>
+        <p className="programs-lead"></p>
 
         <div className="program-grid" role="list">
           {programs.slice(0,6).map(p => (

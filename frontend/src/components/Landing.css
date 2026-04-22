@@ -16,8 +16,8 @@
 .mongol-landing{font-family:var(--font-sans); color:var(--text-dark); background:linear-gradient(180deg,var(--beige), #fff);}
 
 /* top nav */
-.topbar{display:none}
-.book-btn{display:none}
+.topbar{display:flex}
+.book-btn{display:inline-block}
 
 /* global helpers */
 .container{max-width:1200px;margin:0 auto;padding:0 18px}
@@ -27,15 +27,26 @@
 .hero-inner{max-width:1200px; margin:0 auto; padding:0 20px; text-align:center; position:relative; z-index:3}
 /* two-column hero layout: left copy, right circular visual */
 .hero-content{display:flex;flex-direction:column;align-items:center;gap:18px}
-.headline{font-family: 'Playfair Display', Georgia, 'Times New Roman', serif; font-weight:800; font-size:64px; line-height:1.02; margin:0; letter-spacing:-0.6px;}
-.headline .accent{display:block;color:var(--gold); margin-top:6px; font-size:56px; letter-spacing:0}
-.headline .line1{display:block;font-size:36px;color:var(--text-dark);opacity:0.98}
-.hero-note{margin-top:8px;color:var(--text-dark);font-weight:700;background:rgba(250,235,220,0.6);display:inline-block;padding:6px 10px;border-radius:999px}
-.sub{color:var(--muted-weak); margin:8px 0 18px}
-.overlay{position:absolute;inset:0;z-index:1;background:
-  linear-gradient(180deg, rgba(2,6,23,0.12), rgba(3,37,65,0.04)),
-  radial-gradient(circle at 12% 14%, rgba(245,158,11,0.18) 0%, rgba(245,158,11,0.04) 18%, transparent 36%);
-backdrop-filter: blur(1px) brightness(1.02)}
+.headline{display:none}
+.hero-note{display:none}
+.sub{display:none}
+
+/* overlay used for hero readability */
+.overlay{position:absolute;inset:0;z-index:2;pointer-events:none;background:
+  linear-gradient(180deg, rgba(3,37,65,0.46), rgba(3,37,65,0.18)),
+  radial-gradient(circle at 12% 14%, rgba(245,158,11,0.06) 0%, rgba(245,158,11,0.02) 18%, transparent 36%);
+backdrop-filter: blur(2px) brightness(0.96)}
+
+/* If the hero is using the half-hero layout and you want no dark overlay,
+   explicitly remove it here. This overrides the .overlay background and
+   any backdrop filter so the photo is shown at full quality. */
+.hero.half-hero .overlay{
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
 
 @media(max-width:980px){
   .hero-grid{grid-template-columns:1fr 240px}
@@ -55,6 +66,44 @@ backdrop-filter: blur(1px) brightness(1.02)}
 
 .hero{min-height:520px}
 
+/* Show only the upper portion of the hero image so it reads as a half-page background.
+   The image is provided via the --hero-image CSS variable set from the component. */
+.hero.half-hero{
+  background-image: linear-gradient(180deg, rgba(3,37,65,0.22), rgba(3,37,65,0.06)), var(--hero-image);
+  /* ensure the photo fills the hero cleanly and remains sharp */
+  background-size: cover; /* scale to cover container */
+  -webkit-background-size: cover;
+  background-position: center center; /* focus on center for better crop */
+  background-repeat: no-repeat;
+  /* avoid fixed attachment on mobile for performance; will inherit fixed if .has-hero sets it */
+  background-attachment: scroll;
+  /* hint to browsers to render photographs at full quality where supported */
+  image-rendering: auto;
+  min-height: 50vh; /* fallback for older browsers */
+  display: block;
+}
+
+/* Ensure hero text reads light on top of the image */
+.hero.half-hero .hero-inner, .hero.half-hero .hero-copy{color:var(--beige);}
+.hero.half-hero .headline{font-size:48px;line-height:1.02;margin-top:6px;color:#fff;font-weight:800}
+.hero.half-hero .kicker{font-weight:700; color:rgba(255,255,255,0.9); margin-bottom:6px}
+.hero.half-hero .sub{color:rgba(255,255,255,0.9);max-width:640px}
+
+/* Topbar styling when over the hero: transparent glass effect */
+.topbar{position:absolute;top:18px;left:0;right:0;z-index:6;padding:0 18px}
+.topbar-inner{display:flex;align-items:center;justify-content:space-between;gap:18px}
+.topbar .brand{color:var(--beige);font-weight:800;font-size:18px}
+.nav-links{display:flex;gap:18px;align-items:center;margin:0;padding:0;list-style:none}
+.nav-links a{color:rgba(255,255,255,0.94);text-decoration:none;font-weight:600}
+.topbar-actions .btn-outline{border-color:rgba(255,255,255,0.14);color:rgba(255,255,255,0.94);background:transparent}
+.topbar-actions .btn-primary{background:linear-gradient(90deg,var(--gold), #caa73a);color:var(--beige)}
+
+/* make hero content align center-left on wide screens for an immersive layout */
+@media(min-width:980px){
+  .hero-inner{display:flex;align-items:center;justify-content:flex-start;padding-left:40px}
+  .hero-content{align-items:flex-start;text-align:left}
+}
+
 .hero .hero-inner{ position:relative; z-index:3 }
 .hero-sub{ color:var(--muted-weak) }
 
@@ -73,6 +122,17 @@ backdrop-filter: blur(1px) brightness(1.02)}
     url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 120' preserveAspectRatio='none'><path d='M0 30 C150 70 350 10 600 30 C850 50 1050 10 1200 30 L1200 120 L0 120 Z' fill='%230b1220'/></svg>") bottom center/100% 84px no-repeat;
 }
 
+/* Remove the dark vignette / decorative wave so overlapping cards are not covered
+   (user requested this hero overlay be removed) */
+.hero.has-hero::after{display:none}
+
+/* Ensure the hero overlay is visible for the half-hero layout and show hero text
+   (the overlay rule earlier provides the darkening for readability) */
+.hero.half-hero{padding:48px 0 28px}
+.hero.half-hero .headline,
+.hero.half-hero .sub,
+.hero.half-hero .kicker{display:block}
+
 /* small decorative accent near header text */
 .cta{margin-top:18px}
 .btn{display:inline-block;padding:10px 18px;border-radius:14px;text-decoration:none;margin:0 8px;font-weight:700}
@@ -80,18 +140,7 @@ backdrop-filter: blur(1px) brightness(1.02)}
 .btn-primary:hover{transform:translateY(-3px)}
 .btn-outline{background:transparent;border:1px solid rgba(255,255,255,0.1);color:var(--muted-white)}
 
-/* search bar */
-.searchbar{display:flex;gap:12px;align-items:center;background:linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,255,255,0.9));padding:14px;border-radius:16px;box-shadow:0 18px 50px rgba(2,6,23,0.08);color:var(--text-dark);backdrop-filter:blur(0);border:1px solid rgba(11,18,32,0.06)}
-.searchbar .field{flex:1}
-.searchbar input,.searchbar select{width:100%;padding:12px;border-radius:10px;border:1px solid rgba(11,18,32,0.06);background:transparent;color:var(--text-dark);font-weight:600}
-.searchbar .cta{background:linear-gradient(90deg,var(--gold), #d48826);color:var(--beige);border:none;padding:12px 18px;border-radius:14px;font-weight:800;box-shadow:0 10px 30px rgba(212,175,55,0.12)}
-
-/* floating search container */
-.search-float{position:absolute;left:50%;transform:translateX(-50%);bottom:-48px;width:86%;max-width:980px;z-index:80}
-.glass-search{background:linear-gradient(180deg, rgba(255,255,255,0.96), rgba(250,245,240,0.86));padding:14px;border-radius:18px;border:1px solid rgba(11,18,32,0.06)}
-.searchbar .field{flex:1}
-.searchbar input,.searchbar select{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:var(--muted-white)}
-.searchbar .cta{background:linear-gradient(90deg,var(--gold), #d77b16);color:var(--beige);border:none;padding:10px 16px;border-radius:12px;font-weight:800}
+/* Search removed from hero — related styles intentionally left minimal. */
 
 .cta{margin-top:18px}
 .btn{display:inline-block;padding:10px 18px;border-radius:14px;text-decoration:none;margin:0 8px;font-weight:700}
@@ -201,6 +250,23 @@ backdrop-filter: blur(1px) brightness(1.02)}
 .program-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:22px; align-items:stretch}
 .program-card{background:#fff; border-radius:12px; border:1px solid #e9eef2; box-shadow:0 8px 24px rgba(15,23,42,0.06); overflow:hidden; display:flex; flex-direction:column; transition:transform .22s ease, box-shadow .22s ease, border-color .18s ease}
 
+/* Hero overlapping program cards (header) */
+.hero-programs{position:relative;margin-top:-80px;padding-bottom:40px}
+.hero-programs{display:none !important}
+.hero-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;align-items:stretch}
+.hero-card{border-radius:12px;overflow:hidden;box-shadow:0 12px 40px rgba(15,23,42,0.08);transition:transform .22s ease;border:1px solid #eee;background:#fff}
+.hero-card .program-media{height:160px}
+.hero-card .program-media img{width:100%;height:100%;object-fit:cover;display:block}
+.hero-card .badge-top{position:absolute;left:14px;top:12px;background:linear-gradient(90deg,#ff7a7a,#ff5e8a);color:#fff;padding:8px 14px;border-radius:20px;font-weight:800;font-size:13px;box-shadow:0 6px 18px rgba(0,0,0,0.12)}
+.hero-card .badge-top{display:none !important}
+.hero-card .program-body{padding:14px}
+.hero-card h3{font-size:16px;margin:0 0 8px}
+.hero-card .program-footer{align-items:center}
+.btn-ghost{background:transparent;border:1px solid rgba(11,18,32,0.06);padding:8px 12px;border-radius:10px}
+
+@media(max-width:1100px){.hero-cards{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:640px){.hero-cards{grid-template-columns:1fr}.hero-programs{margin-top:-40px;padding:18px}}
+
 /* make entire card appear clickable and provide focus outline for keyboard users */
 .program-card.clickable{cursor:pointer}
 .program-card.clickable:focus{outline:3px solid rgba(16,185,129,0.12); outline-offset:4px}
@@ -218,6 +284,30 @@ backdrop-filter: blur(1px) brightness(1.02)}
 .program-actions{display:flex; gap:8px}
 .program-actions .btn{padding:8px 12px; font-size:14px}
 .program-price{font-weight:800; color:#06b6d4}
+
+/* Keep card action buttons clearly visible on the Programs cards */
+.program-card .program-footer{align-items:center}
+.program-card .program-actions{display:flex;gap:8px;flex-wrap:wrap}
+.program-card .program-actions .btn{
+  min-width:110px;
+  justify-content:center;
+  border-radius:10px;
+  font-weight:700;
+}
+.program-card .program-actions .btn-outline{
+  background:#ffffff;
+  color:#0f172a;
+  border:1px solid #cbd5e1;
+}
+.program-card .program-actions .btn-outline:hover{
+  background:#f8fafc;
+  border-color:#94a3b8;
+}
+.program-card .program-actions .btn-primary{
+  background:linear-gradient(90deg, #2563eb, #1d4ed8);
+  color:#ffffff;
+  border:1px solid #1d4ed8;
+}
 
 /* Hover effects: lift, image zoom, shadow increase, border accent */
 .program-card:hover{transform:translateY(-8px); box-shadow:0 30px 60px rgba(15,23,42,0.12); border-color:rgba(6,182,212,0.14)}
@@ -244,6 +334,41 @@ backdrop-filter: blur(1px) brightness(1.02)}
 .listing.small.selected{outline:2px solid rgba(245,158,11,0.15)}
 .listing.small .listing-body h4{font-size:14px; margin:0 0 4px}
 .listing.small .listing-body p{font-size:13px; margin:0}
+
+/* Empty area image upload card in Listings */
+.empty-state-upload-area{max-width:680px}
+.empty-state-image-card{
+  margin-top:14px;
+  background:#fff;
+  border:1px solid #e5e7eb;
+  border-radius:12px;
+  padding:12px;
+  box-shadow:0 8px 24px rgba(15,23,42,0.06);
+}
+.empty-gallery-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(180px, 1fr));
+  gap:10px;
+}
+.empty-state-image{
+  width:100%;
+  height:160px;
+  object-fit:cover;
+  border-radius:10px;
+  border:1px solid #e5e7eb;
+  display:block;
+}
+.empty-state-image-placeholder{
+  width:100%;
+  min-height:220px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:2px dashed #d1d5db;
+  border-radius:10px;
+  color:#6b7280;
+  background:linear-gradient(180deg,#f9fafb,#f3f4f6);
+}
 
 /* Simple calendar styles */
 .simple-calendar{border-collapse:separate; border-spacing:0; width:100%; background:#fff; border-radius:10px; overflow:hidden; box-shadow:0 6px 18px rgba(15,23,42,0.06)}
@@ -272,6 +397,28 @@ backdrop-filter: blur(1px) brightness(1.02)}
 .simple-calendar th{font-size:13px; padding:8px 4px}
 .simple-calendar th, .simple-calendar td{padding:8px 6px; border-bottom:1px solid #f3f4f6}
 .simple-calendar td, .simple-calendar th{height:40px}
+
+/* Mobile improvements: more compact paddings, single-column grids and adjusted hero sizes */
+@media (max-width: 640px) {
+  .container { padding-left:12px; padding-right:12px }
+  .hero { padding:44px 0 28px; min-height:320px }
+  .hero-inner { padding-left:12px; padding-right:12px }
+  .hero-content { gap:12px; align-items:center }
+  .hero-illustration { height:160px }
+  .cards { grid-template-columns: 1fr }
+  .why-grid { grid-template-columns: 1fr; gap:14px }
+  .why-item { padding:18px }
+  .tour-grid { grid-template-columns: 1fr; gap:14px }
+  .tour-media, .stacked { height:160px }
+  .program-grid { grid-template-columns: 1fr }
+  .hero-cards { grid-template-columns: 1fr; gap:12px }
+  .testimonial-card { padding:20px }
+  .site-footer .brand-row { flex-direction:column; gap:12px }
+  .btn { padding:10px 14px; border-radius:12px }
+  .btn-hero { padding:12px 18px }
+  .features-list { padding-left:12px }
+  .empty-state-image { height:120px }
+}
 
 /* responsive */
 @media(max-width:480px){
@@ -405,3 +552,486 @@ backdrop-filter: blur(1px) brightness(1.02)}
 }
 
 .selected-grid{padding-bottom:72px} /* give space for sticky footer */
+
+/* ================================
+   UI redesign overrides (clean pass)
+   ================================ */
+
+/* ========================================
+   Subtle translucent layer design system
+   Modern premium UI with minimal glass
+   ======================================== */
+
+/* Global button styles with subtle translucent effects */
+.btn{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  border: 1px solid transparent;
+  gap: 6px;
+}
+
+/* Primary button - subtle gradient with backdrop blur */
+.btn-primary{
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.85), rgba(29, 78, 216, 0.85));
+  color: #fff;
+  border: 1px solid rgba(37, 99, 235, 0.3);
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.15);
+  backdrop-filter: blur(4px);
+}
+.btn-primary:hover{
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.25);
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.95), rgba(29, 78, 216, 0.95));
+}
+.btn-primary:active{
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15);
+}
+
+/* Outline button - subtle translucent border */
+.btn-outline{
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(4px);
+}
+.btn-outline:hover{
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.95);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+/* Ghost button - minimal translucent */
+.btn-ghost{
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(4px);
+}
+.btn-ghost:hover{
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.95);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Card styles with subtle translucent focus areas */
+.program-card{
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  border-radius: 16px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(2, 8, 23, 0.04);
+}
+.program-card:hover{
+  transform: translateY(-6px);
+  box-shadow: 0 16px 40px rgba(2, 8, 23, 0.1);
+  border-color: rgba(37, 99, 235, 0.12);
+}
+.program-card:focus{
+  outline: 2px solid rgba(37, 99, 235, 0.3);
+  outline-offset: 2px;
+}
+
+/* Tour card subtle translucent effect */
+.tour-card{
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, 0.04);
+  border-radius: 16px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 16px rgba(2, 8, 23, 0.04);
+}
+.tour-card:hover{
+  transform: translateY(-8px);
+  box-shadow: 0 20px 48px rgba(2, 8, 23, 0.1);
+}
+
+/* News card with subtle translucent overlay */
+.news-card.small{
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  backdrop-filter: blur(4px);
+  transition: all 0.25s ease;
+}
+.news-card.small:hover{
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(2, 8, 23, 0.15);
+}
+
+/* Feature card with subtle translucent */
+.why-item{
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 24px 18px;
+  transition: all 0.25s ease;
+  backdrop-filter: blur(4px);
+}
+.why-item:hover{
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.12);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(2, 8, 23, 0.1);
+}
+
+/* Modal overlay - subtle dark backdrop */
+.modal-overlay{
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+}
+
+/* Ensure modal content text is dark/black for readability */
+.modal-content, .modal-content *{
+  color: #0b1220 !important;
+}
+
+/* Inputs should have dark text on light background in modal */
+.modal-content input, .modal-content textarea, .modal-content select{
+  color: #0b1220 !important;
+  background: #fff !important;
+  border: 1px solid #e5e7eb !important;
+}
+
+/* Buttons in modal: ensure readable contrast */
+.modal-content .btn, .modal-content .btn-outline, .modal-content .btn-primary{
+  color: #0b1220 !important;
+}
+
+/* Ensure headings inside modal are dark */
+.modal-content h1, .modal-content h2, .modal-content h3, .modal-content strong, .modal-content p, .modal-content label{
+  color: #0b1220 !important;
+}
+
+/* Input fields with subtle translucent border */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+textarea,
+select{
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(4px);
+}
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="search"]:focus,
+textarea:focus,
+select:focus{
+  outline: none;
+  border-color: rgba(37, 99, 235, 0.4);
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Calendar with subtle translucent */
+.simple-calendar{
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  backdrop-filter: blur(4px);
+}
+.simple-calendar td.available:hover{
+  background: rgba(37, 99, 235, 0.08);
+  transform: translateY(-2px);
+}
+.simple-calendar td.selected{
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.85), rgba(29, 78, 216, 0.85));
+  color: #fff;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+/* Light theme overrides for mongol-landing */
+.mongol-landing .btn-primary{
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.9), rgba(29, 78, 216, 0.9));
+  color: #fff;
+  border: 1px solid rgba(37, 99, 235, 0.2);
+}
+.mongol-landing .btn-outline{
+  background: rgba(255, 255, 255, 0.5);
+  color: var(--ui-text);
+  border: 1px solid rgba(15, 23, 42, 0.15);
+}
+.mongol-landing .btn-outline:hover{
+  background: rgba(255, 255, 255, 0.7);
+  border-color: rgba(15, 23, 42, 0.25);
+}
+
+/* Listing card subtle effects */
+.listing.small{
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(4px);
+}
+.listing.small:hover{
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+.listing.small.selected{
+  background: rgba(37, 99, 235, 0.08);
+  border-color: rgba(37, 99, 235, 0.2);
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.1);
+}
+
+/* Selected footer with subtle translucent */
+.selected-footer{
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(8px) saturate(120%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 -4px 20px rgba(2, 8, 23, 0.06);
+}
+
+/* Empty state card */
+.empty-state-image-card{
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 12px;
+  backdrop-filter: blur(4px);
+}
+
+.mongol-landing{
+  --ui-primary: #2563eb;
+  --ui-primary-dark: #1d4ed8;
+  --ui-accent: #f59e0b;
+  --ui-text: #0f172a;
+  --ui-muted: #64748b;
+  --ui-surface: #ffffff;
+  --ui-border: #e2e8f0;
+  --ui-shadow: 0 10px 30px rgba(2, 8, 23, 0.08);
+  color: var(--ui-text);
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 30%);
+}
+
+.hero.half-hero{
+  min-height: 72vh;
+  padding: 72px 0 52px;
+}
+
+.topbar{
+  top: 20px;
+}
+
+.topbar-inner{
+  background: rgba(15, 23, 42, 0.44);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 18px;
+  padding: 12px 18px;
+  box-shadow: 0 14px 34px rgba(2, 8, 23, 0.24);
+  backdrop-filter: blur(8px);
+}
+
+.topbar .brand{
+  color: #fff;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  text-decoration: none;
+}
+
+.nav-links a{
+  color: rgba(255, 255, 255, 0.95);
+  padding: 8px 12px;
+  border-radius: 10px;
+}
+
+.nav-links a:hover{
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.topbar-actions .btn{
+  margin: 0;
+}
+
+.topbar-actions{
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.btn-outline{
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.34);
+}
+
+.btn-primary{
+  background: linear-gradient(90deg, var(--ui-primary), var(--ui-primary-dark));
+  color: #fff;
+  border: 1px solid transparent;
+}
+
+.btn-primary:hover{
+  transform: translateY(-2px);
+}
+
+.why{
+  padding: 72px 0;
+}
+
+.why h2{
+  font-family: var(--font-sans);
+  font-size: 34px;
+  font-weight: 800;
+  margin-bottom: 22px;
+}
+
+.why-item{
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
+  box-shadow: var(--ui-shadow);
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+
+.why-item:hover{
+  transform: translateY(-4px);
+  box-shadow: 0 18px 34px rgba(2, 8, 23, 0.12);
+}
+
+.why-item .icon{
+  color: var(--ui-primary);
+  background: rgba(37, 99, 235, 0.1);
+}
+
+.why-item p{
+  color: var(--ui-muted);
+  line-height: 1.65;
+}
+
+.programs{
+  background: #fff;
+}
+
+.program-grid{
+  gap: 20px;
+}
+
+.program-card{
+  border-radius: 16px;
+}
+
+.program-head h3{
+  font-size: 19px;
+}
+
+.program-meta,
+.program-extra{
+  color: var(--ui-muted);
+}
+
+.program-price{
+  color: var(--ui-primary);
+}
+
+.testimonial{
+  padding: 64px 0;
+  background: linear-gradient(180deg, #f8fafc, #eef2ff);
+}
+
+.testimonial-card{
+  background: #fff;
+  border: 1px solid var(--ui-border);
+  box-shadow: var(--ui-shadow);
+}
+
+.testimonial-card blockquote{
+  color: #1e293b;
+}
+
+.footer{
+  margin-top: 20px;
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+.footer-inner{
+  display: flex;
+  justify-content: space-between;
+  gap: 22px;
+  padding: 34px 18px;
+}
+
+.footer .muted,
+.footer .icons a,
+.footer-bottom{
+  color: #94a3b8;
+}
+
+.footer .icons{
+  display: flex;
+  gap: 12px;
+}
+
+.footer .icons a{
+  text-decoration: none;
+  padding: 6px 10px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 999px;
+}
+
+.footer-bottom{
+  text-align: center;
+  border-top: 1px solid rgba(148, 163, 184, 0.25);
+  padding: 14px 18px;
+}
+
+@media (max-width: 980px){
+  .topbar-inner{
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .footer-inner{
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 700px){
+  .hero.half-hero{
+    min-height: 62vh;
+  }
+
+  .topbar-actions{
+    width: 100%;
+    justify-content: center;
+  }
+
+  .nav-links{
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .why h2{
+    font-size: 28px;
+  }
+
+  .why-grid{
+    grid-template-columns: 1fr;
+  }
+
+  .program-grid{
+    grid-template-columns: 1fr;
+  }
+}

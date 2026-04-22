@@ -24,7 +24,34 @@ export default function Login(){
         // store token and redirect to Home
         if(data.token) localStorage.setItem('token', data.token)
         if(data.user) localStorage.setItem('user', JSON.stringify(data.user))
-        window.location.href = '/'
+        // attempt to publish any locally-saved admin news after login
+        try{
+          const pending = JSON.parse(localStorage.getItem('newsCards') || '[]')
+          // only try if there are pending items and user is admin
+          if(Array.isArray(pending) && pending.length && data.user?.role === 'admin'){
+            // post pending items in background (fire-and-forget)
+            ;(async ()=>{
+              for(const p of pending){
+                try{
+                  const token = data.token
+                  const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
+                  const res = await fetch('/api/admin/news', { method: 'POST', headers, body: JSON.stringify({ title: p.title, img: p.img, date: p.date, desc: p.desc }) })
+                  if(res.ok){
+                    // remove item locally by filtering existing storage
+                    const current = JSON.parse(localStorage.getItem('newsCards') || '[]')
+                    const filtered = current.filter(x => !(x.title === p.title && x.date === p.date))
+                    localStorage.setItem('newsCards', JSON.stringify(filtered))
+                  }
+                }catch(e){ console.error('retry publish failed', e) }
+              }
+            })()
+          }
+        }catch(e){/* ignore */}
+        if (data.user?.role === 'admin') {
+          window.location.href = '/admin'
+        } else {
+          window.location.href = '/'
+        }
       }
     }catch(err){
       console.error(err)

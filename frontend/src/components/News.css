@@ -1,0 +1,90 @@
+/* Basic styles for News cards to improve layout and responsiveness */
+.news-section{background:#f7faf9;padding:48px 0}
+.news-layout{display:grid;grid-template-columns:1fr;gap:30px;align-items:start;max-width:1200px;margin:0 auto;padding:0 16px}
+.news-feature{display:flex;gap:20px;padding:0;border-radius:12px;overflow:hidden;background:#fff;box-shadow:0 10px 30px rgba(2,12,18,0.06)}
+.feature-media{width:50%;min-height:320px;background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;background-color:#e9f7f6}
+.feature-media-img{width:100%;height:100%;object-fit:cover;display:block}
+.feature-body{padding:28px 28px 32px;flex:1}
+.feature-title{margin:0 0 10px;font-size:1.5rem;line-height:1.15;color:#043236}
+.feature-desc{color:#044b44;line-height:1.6}
+.feature-meta{color:rgba(4,50,46,0.75);font-size:0.9rem;margin-bottom:8px}
+.news-side{padding-top:6px}
+.news-grid-small{display:grid;grid-template-columns:1fr;gap:12px}
+.news-card.small{display:flex;gap:12px;align-items:flex-start;padding:14px;border-radius:10px;background:#fff;box-shadow:0 6px 18px rgba(2,12,18,0.04)}
+.news-illustration{width:96px;height:72px;background-size:cover;background-position:center;border-radius:6px;overflow:hidden;flex:0 0 96px}
+.news-illustration-img{width:100%;height:100%;object-fit:cover;display:block}
+.news-meta{color:rgba(4,50,46,0.75);font-size:0.85rem}
+.news-title{margin:0 0 6px;font-size:1.05rem;color:#043236}
+.news-desc{margin:0;color:#044b44;font-size:0.95rem;opacity:0.95}
+
+/* Grid layout styles for the new news-grid used by News.jsx */
+.news-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.news-banner{grid-column:1 / -1;padding:8px 0 0}
+.news-card.grid{display:flex;flex-direction:column;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 8px 24px rgba(2,12,18,0.06)}
+.news-grid-media{width:100%;height:220px;overflow:hidden}
+.news-grid-media-img{width:100%;height:100%;object-fit:cover;display:block}
+.news-grid-body{padding:16px}
+.news-card.grid .news-title{font-size:1.15rem;margin-bottom:8px}
+.news-card.grid .news-meta{font-size:0.9rem;margin-bottom:8px;color:rgba(4,50,46,0.6)}
+
+/* Truncate long descriptions in previews */
+.clamp-small{
+  display:-webkit-box;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:3;
+  overflow:hidden;
+}
+
+.clamp-feature{
+  display:-webkit-box;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:6;
+  overflow:hidden;
+}
+
+.news-side .news-card.small{background:#ffffff;border:1px solid #eef4f3}
+.news-side .news-card.small .news-content{color:#043236}
+.news-side .news-meta{color:rgba(4,50,46,0.6)}
+.news-side .btn.news-link{background:#06b6b4;color:#043236}
+
+/* Modal / detail view */
+.news-modal{position:fixed;inset:0;background:rgba(6,8,10,0.45);display:flex;align-items:center;justify-content:center;z-index:1200;padding:20px}
+.news-modal-content{background:#ffffff;border-radius:12px;max-width:1000px;width:100%;box-shadow:0 12px 40px rgba(2,12,18,0.18);overflow:hidden;display:grid;grid-template-columns:1fr 380px;gap:0}
+.news-modal-media{background-size:cover;background-position:center;min-height:360px;display:flex;align-items:center;justify-content:center;background:#f1f9f8}
+.news-modal-media-img{width:100%;height:100%;object-fit:cover;display:block}
+.news-modal-body{padding:28px}
+.news-modal .feature-title{font-size:1.4rem;color:#023f3d}
+.news-modal .feature-meta{margin-bottom:8px;color:rgba(4,50,46,0.7)}
+.news-modal .feature-desc{color:#234;opacity:0.95;line-height:1.6}
+.news-modal-close{position:absolute;right:22px;top:18px;background:#fff;border-radius:8px;padding:6px 10px;border:1px solid rgba(4,50,46,0.08);cursor:pointer}
+/* Responsive adjustments */
+@media (max-width:1100px){
+  .news-layout{grid-template-columns:1fr;}
+  .feature-media{width:100%;min-height:220px}
+  .news-modal-content{grid-template-columns:1fr}
+  .news-modal-media{min-height:220px}
+  .news-grid-small{grid-template-columns:1fr}
+  .news-card.small{flex-direction:row}
+}
+
+@media (min-width:1100px){
+  /* show two small cards per column on larger screens */
+  .news-grid-small{grid-template-columns:1fr 1fr}
+  .news-card.small{align-items:flex-start}
+}
+
+@media (max-width:520px){
+  .feature-body{padding:16px}
+  .feature-title{font-size:1.15rem}
+  .feature-desc{font-size:0.95rem}
+}
+
+/* Additional mobile tweaks for very small screens */
+@media (max-width:420px){
+  .news-layout{padding-left:12px; padding-right:12px}
+  .feature-media{min-height:160px}
+  .news-grid{grid-template-columns:1fr}
+  .news-illustration{width:80px; min-width:80px; height:64px}
+  .feature-title{font-size:1rem}
+  .feature-body{padding:12px}
+}

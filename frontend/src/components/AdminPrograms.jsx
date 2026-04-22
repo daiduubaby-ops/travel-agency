@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 
-const emptyForm = { title:'', time:'', location:'', price:'', age:'', days: [], images: [], duration:'', capacity:'', accommodation:'', transport:'', cancellation:'', nights:'', language:'', phone:'' }
+const emptyForm = { title:'', time:'', location:'', price:'', age:'', days: [], images: [], duration:'', capacity:'', accommodation:'', transport:'', cancellation:'', nights:'', language:'', phone:'', people: '' }
 
 function api(path, options={}){
   const token = localStorage.getItem('token')
@@ -8,7 +8,7 @@ function api(path, options={}){
   if(token) headers.Authorization = `Bearer ${token}`
   // when sending FormData we should not set content-type
   if(!(options && options.body instanceof FormData)) headers['Content-Type'] = headers['Content-Type'] || 'application/json'
-  return fetch(`/api/programs${path}`, { ...options, headers })
+  return fetch(`/api/admin/programs${path}`, { ...options, headers })
 }
 
 async function uploadImage(file){
@@ -25,6 +25,10 @@ async function uploadImage(file){
 
 export default function AdminPrograms(){
   const [programs, setPrograms] = useState([])
+  const [bookings, setBookings] = useState([])
+  const [editingBooking, setEditingBooking] = useState(null)
+  const [bookingForm, setBookingForm] = useState({ status: '' })
+  const [bookingMessage, setBookingMessage] = useState('')
   const [features, setFeatures] = useState([])
   const [editingFeature, setEditingFeature] = useState(null)
   const [featureForm, setFeatureForm] = useState({ title:'', lead:'', description:'', image:'' })
@@ -32,6 +36,9 @@ export default function AdminPrograms(){
   const [form, setForm] = useState(emptyForm)
   const [message, setMessage] = useState('')
   const [homePreview, setHomePreview] = useState(null)
+  const [listingsGallery, setListingsGallery] = useState([])
+  const LISTINGS_GALLERY_STORAGE_KEY = 'listingsEmptyGalleryImages'
+
   const [loading, setLoading] = useState(false)
   // admin-configurable program category buttons visibility/labels
   const [categoriesConfig, setCategoriesConfig] = useState(() => {
@@ -55,19 +62,57 @@ export default function AdminPrograms(){
         const res = await api('/')
         if(!res.ok){
           // fallback to localStorage
+          // try public programs endpoint as a fallback as well
+          try{
+            const publicRes = await fetch('/api/programs')
+            if(publicRes.ok){ const pub = await publicRes.json(); try{ localStorage.setItem('programs', JSON.stringify(pub)) }catch(e){}; setPrograms(pub); return }
+          }catch(e){}
+
           const raw = localStorage.getItem('programs')
           setPrograms(raw ? JSON.parse(raw) : [])
           return
         }
         const data = await res.json()
         if(!mounted) return
-        setPrograms(data)
+
+        // additionally fetch public programs and merge any that admin list may not include
+        try{
+          const publicRes = await fetch('/api/programs')
+          if(publicRes.ok){
+            const pub = await publicRes.json()
+            const merged = Array.isArray(data) ? [...data] : []
+            if(Array.isArray(pub)){
+              pub.forEach(p => {
+                if(!merged.some(x => String(x.id) === String(p.id))) merged.push(p)
+              })
+            }
+            try{ localStorage.setItem('programs', JSON.stringify(merged)) }catch(e){}
+            setPrograms(merged)
+          } else {
+            try{ localStorage.setItem('programs', JSON.stringify(data)) }catch(e){}
+            setPrograms(data)
+          }
+        }catch(e){ try{ localStorage.setItem('programs', JSON.stringify(data)) }catch(err){}; setPrograms(data) }
       }catch(e){
+        // on error, try the public programs endpoint then localStorage
+        try{
+          const publicRes = await fetch('/api/programs')
+          if(publicRes.ok){ const pub = await publicRes.json(); setPrograms(pub); return }
+        }catch(err){}
         const raw = localStorage.getItem('programs')
         setPrograms(raw ? JSON.parse(raw) : [])
       }
     }
     load()
+    // load bookings for admin management
+    ;(async function loadBookings(){
+      try{
+        const res = await fetch('/api/admin/bookings')
+        if(!res.ok) return
+        const data = await res.json()
+        if(mounted) setBookings(data)
+      }catch(e){/* ignore */}
+    })()
     // load features for admin management
     ;(async function loadFeatures(){
       try{
@@ -78,6 +123,23 @@ export default function AdminPrograms(){
         const data = await res.json()
         if(mounted) setFeatures(data)
       }catch(e){/* ignore */}
+    })()
+    ;(async function loadListingsGallery(){
+      try{
+        const res = await fetch('/api/settings/listings-empty-gallery')
+        if(!res.ok) throw new Error('settings fetch failed')
+        const data = await res.json()
+        const imgs = Array.isArray(data.images) ? data.images : []
+        if(mounted) setListingsGallery(imgs)
+        try{ localStorage.setItem(LISTINGS_GALLERY_STORAGE_KEY, JSON.stringify(imgs)) }catch(e){}
+      }catch(e){
+        // backend unavailable fallback
+        try{
+          const raw = localStorage.getItem(LISTINGS_GALLERY_STORAGE_KEY)
+          const imgs = raw ? JSON.parse(raw) : []
+          if(mounted) setListingsGallery(Array.isArray(imgs) ? imgs : [])
+        }catch(err){/* ignore */}
+      }
     })()
     return () => { mounted = false }
   }, [])
@@ -100,6 +162,11 @@ export default function AdminPrograms(){
   function setLocal(programs){
     try{ localStorage.setItem('programs', JSON.stringify(programs)) }catch(e){}
     setPrograms(programs)
+  }
+
+  function setBookingLocal(bookings){
+    try{ localStorage.setItem('bookings', JSON.stringify(bookings)) }catch(e){}
+    setBookings(bookings)
   }
 
   function handleEdit(p){
@@ -141,7 +208,44 @@ export default function AdminPrograms(){
     setLoading(false)
   }
 
+  async function handleBookingUpdate(id, status){
+    if(!confirm('Энэ захиалгын төлөвлөлтийг шинэчлэх үү?')) return
+    setLoading(true)
+    try{
+      const res = await fetch(`/api/admin/bookings/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) })
+      if(res.ok){
+        const updated = await res.json()
+        const next = bookings.map(b => b.id === updated.id ? updated : b)
+        setBookingLocal(next)
+        setBookingMessage('Захиалгын төлөвлөлт шинэчлэгдлээ')
+      } else {
+        const d = await res.json().catch(()=>({}))
+        setBookingMessage(d.message || 'Шинэчлэх үед алдаа')
+      }
+    }catch(e){ setBookingMessage('Сүлжээний алдаа') }
+    setLoading(false)
+  }
+
+  async function handleBookingCancel(id){
+    if(!confirm('Энэ захиалгыг цуцлах үү?')) return
+    setLoading(true)
+    try{
+      const res = await fetch(`/api/admin/bookings/${id}/cancel`, { method: 'PUT' })
+      if(res.ok){
+        const updated = await res.json()
+        const next = bookings.map(b => b.id === updated.id ? updated : b)
+        setBookingLocal(next)
+        setBookingMessage('Захиалга цуцлагдлаа')
+      } else {
+        const d = await res.json().catch(()=>({}))
+        setBookingMessage(d.message || 'Цуцлах үед алдаа')
+      }
+    }catch(e){ setBookingMessage('Сүлжээний алдаа') }
+    setLoading(false)
+  }
+
   function handleChange(e){ const { name, value } = e.target; setForm(prev => ({ ...prev, [name]: value })) }
+  function handleBookingChange(e){ const { name, value } = e.target; setBookingForm(prev => ({ ...prev, [name]: value })) }
 
   // images - support picking multiple files
   async function handleImagePick(e){
@@ -185,6 +289,63 @@ export default function AdminPrograms(){
       setHomePreview(d.url || d.path || '/public/home-hero.jpg')
       setMessage('Home background амжилттай солигдлоо')
     }catch(err){ setMessage('Зураг байрлуулахад алдаа') }
+    setLoading(false)
+  }
+
+  async function handleListingsGalleryPick(e){
+    const files = e.target.files
+    if(!files || files.length === 0) return
+    setLoading(true)
+    try{
+      const next = [...listingsGallery]
+      for(let i=0;i<files.length;i++){
+        if(next.length >= 5) break
+        const url = await uploadImage(files[i])
+        next.push(url)
+      }
+      setListingsGallery(next.slice(0,5))
+      if(next.length > 5) setMessage('Дээд тал нь 5 зураг оруулна')
+    }catch(err){
+      setMessage('Зураг байрлуулахад алдаа')
+    }
+    setLoading(false)
+    try{ e.target.value = '' }catch(e){}
+  }
+
+  function removeListingsGalleryImage(i){
+    setListingsGallery(prev => prev.filter((_, idx) => idx !== i))
+  }
+
+  async function saveListingsGallery(){
+    if(listingsGallery.length < 3 || listingsGallery.length > 5){
+      setMessage('3-5 зураг байх ёстой')
+      return
+    }
+    setLoading(true)
+    try{
+      // always keep a local backup so values survive logout/login even if backend is down
+      try{ localStorage.setItem(LISTINGS_GALLERY_STORAGE_KEY, JSON.stringify(listingsGallery)) }catch(e){}
+
+      const token = localStorage.getItem('token')
+      const res = await fetch('/api/settings/listings-empty-gallery', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ images: listingsGallery })
+      })
+      const data = await res.json().catch(() => ({}))
+      if(!res.ok){
+        setMessage(data.message || 'Серверт хадгалах үед алдаа гарлаа. Локал хадгалалт хийгдсэн.')
+      } else {
+        setListingsGallery(Array.isArray(data.images) ? data.images : listingsGallery)
+        try{ localStorage.setItem(LISTINGS_GALLERY_STORAGE_KEY, JSON.stringify(Array.isArray(data.images) ? data.images : listingsGallery)) }catch(e){}
+        setMessage('Listings хоосон хэсгийн зураг хадгалагдлаа')
+      }
+    }catch(err){
+      setMessage('Сүлжээний алдаа. Локал хадгалалт хийгдсэн.')
+    }
     setLoading(false)
   }
 
@@ -241,54 +402,31 @@ export default function AdminPrograms(){
 
   return (
     <div className="container" style={{paddingTop:12}}>
-      <h2></h2>
-      {message && <div style={{margin:'8px 0',color:'#0b8457'}}>{message}</div>}
+      <h2 style={{marginBottom:6}}>Хөтөлбөрийн удирдлага</h2>
+      <p style={{marginTop:0, color:'#64748b', marginBottom:14}}>Эндээс аяллын хөтөлбөр нэмэх, засах, устгах боломжтой.</p>
+      {message && <div style={{margin:'8px 0 14px',color:'#0b8457', background:'#ecfdf5', border:'1px solid #a7f3d0', padding:'8px 10px', borderRadius:8}}>{message}</div>}
+      {bookingMessage && <div style={{margin:'8px 0 14px',color:'#0b8457', background:'#ecfdf5', border:'1px solid #a7f3d0', padding:'8px 10px', borderRadius:8}}>{bookingMessage}</div>}
 
-      {/* Home background admin control */}
-      <div style={{margin:'12px 0 18px 0', display:'flex', alignItems:'center', gap:12}}>
-        <div style={{width:220, height:120, border:'1px solid #eee', borderRadius:8, overflow:'hidden', backgroundSize:'cover', backgroundPosition:'center', backgroundImage: homePreview ? `url(${homePreview})` : undefined}} />
-        <div style={{flex:1}}>
-          <div style={{fontWeight:600, marginBottom:6}}>Home арын зураг (админ)</div>
-          <input type="file" accept="image/*" onChange={handleHomePick} />
-          <div style={{fontSize:12, color:'#6b7280', marginTop:6}}>Энэ зураг Home хуудсын hero хэсгийн арын зураг болно.</div>
-        </div>
-      </div>
-
-      {/* Admin control: categories shown on Programs page */}
-      <div style={{margin:'12px 0 18px 0', padding:12, border:'1px dashed #eee', borderRadius:8}}>
-        <div style={{fontWeight:600, marginBottom:8}}>Ангиллууд (админ)</div>
-        <div style={{display:'flex',gap:12,alignItems:'center',marginBottom:8}}>
-          <label style={{display:'flex',alignItems:'center',gap:8}}>
-            <input type="checkbox" checked={!!categoriesConfig.visible} onChange={e => setCategoriesConfig(prev => ({ ...prev, visible: e.target.checked }))} />
-            <span>Товчлуурууд харуулах</span>
-          </label>
-        </div>
-        <div style={{display:'flex',gap:8,alignItems:'center',marginBottom:8}}>
-          <input style={{flex:1}} value={(categoriesConfig.labels && categoriesConfig.labels[0]) || ''} onChange={e => setCategoriesConfig(prev => ({ ...prev, labels: [e.target.value, (prev.labels && prev.labels[1]) || ''] }))} />
-          <input style={{flex:1}} value={(categoriesConfig.labels && categoriesConfig.labels[1]) || ''} onChange={e => setCategoriesConfig(prev => ({ ...prev, labels: [(prev.labels && prev.labels[0]) || '', e.target.value] }))} />
-        </div>
-        <div style={{display:'flex',justifyContent:'flex-end'}}>
-          <button className="btn" onClick={() => { try{ localStorage.setItem('programCategories', JSON.stringify(categoriesConfig)); setMessage('Ангиллын тохиргоог хадгаллаа') }catch(e){ setMessage('Хадгалах алдаа') } }}>Хадгалах</button>
-        </div>
-      </div>
-
-      <section style={{display:'flex',gap:20}}>
-        <div style={{flex:1}}>
+      <section style={{display:'flex',gap:20,alignItems:'flex-start'}}>
+        <div style={{flex:1, border:'1px solid #eee', borderRadius:10, padding:16, background:'#fff', boxShadow:'0 1px 2px rgba(0,0,0,0.03)'}}>
           <h3>Бүх хөтөлбөрүүд</h3>
-          <table style={{width:'100%',borderCollapse:'collapse'}}>
+          <table style={{width:'100%',borderCollapse:'collapse',fontSize:14}}>
             <thead>
-              <tr style={{textAlign:'left'}}><th>Id</th><th>Нэр</th><th>Хугацаа</th><th>Байршил</th><th>Үнэ</th><th>Хүний тоо</th><th></th></tr>
+              <tr style={{textAlign:'left',background:'#f8fafc'}}><th style={{padding:10}}>Id</th><th style={{padding:10}}>Нэр</th><th style={{padding:10}}>Хугацаа</th><th style={{padding:10}}>Байршил</th><th style={{padding:10}}>Үнэ</th><th style={{padding:10}}>Хүний тоо</th><th style={{padding:10}}></th></tr>
             </thead>
             <tbody>
+              {programs.length === 0 && (
+                <tr><td colSpan="7" style={{padding:10,color:'#6b7280'}}>Одоогоор хөтөлбөр бүртгэгдээгүй байна.</td></tr>
+              )}
               {programs.map(p => (
-                <tr key={p.id} style={{borderTop:'1px solid #eee'}}>
-                  <td style={{padding:8}}>{p.id}</td>
-                  <td style={{padding:8}}>{p.title}</td>
-                  <td style={{padding:8}}>{p.time}</td>
-                  <td style={{padding:8}}>{p.location}</td>
-                  <td style={{padding:8}}>{p.price}</td>
-                  <td style={{padding:8}}>{p.age}</td>
-                  <td style={{padding:8}}>
+                <tr key={p.id} style={{borderTop:'1px solid #eee',transition:'background .1s'}} onMouseEnter={e=>e.currentTarget.style.background='#fbfdfe'} onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
+                  <td style={{padding:10,verticalAlign:'middle',width:60}}>{p.id}</td>
+                  <td style={{padding:10,verticalAlign:'middle'}}>{p.title}</td>
+                  <td style={{padding:10,verticalAlign:'middle',width:140}}>{p.time}</td>
+                  <td style={{padding:10,verticalAlign:'middle'}}>{p.location}</td>
+                  <td style={{padding:10,verticalAlign:'middle',width:120}}>{p.price}</td>
+                  <td style={{padding:10,verticalAlign:'middle',width:120}}>{p.age}</td>
+                  <td style={{padding:10,verticalAlign:'middle',textAlign:'right'}}>
                     <button className="btn btn-ghost" onClick={() => handleEdit(p)}>Засах</button>
                     <button className="btn" onClick={() => handleDelete(p.id)} style={{marginLeft:8}} disabled={loading}>Устгах</button>
                   </td>
@@ -297,39 +435,74 @@ export default function AdminPrograms(){
             </tbody>
           </table>
         </div>
+      </section>
 
-        <div style={{width:420}}>
-          <h3>{editing ? 'Хөтөлбөр засварлах' : 'Шинэ хөтөлбөр нэмэх'}</h3>
-          <form onSubmit={editing ? handleUpdate : handleCreate}>
-            <label style={{display:'block',marginBottom:8}}>Аяллын нэр<input name="title" value={form.title} onChange={handleChange} required /></label>
-            <label style={{display:'block',marginBottom:8}}>Хугацаа<input name="time" value={form.time} onChange={handleChange} /></label>
-            <label style={{display:'block',marginBottom:8}}>Үнэ<input name="price" value={form.price} onChange={handleChange} /></label>
-            <label style={{display:'block',marginBottom:8}}>Хүний тоо<input name="people" value={form.people} onChange={handleChange} /></label>
-            <label style={{display:'block',marginBottom:8}}>Хүний дээд хэмжээ (capacity)<input name="capacity" value={form.capacity} onChange={handleChange} /></label>
-            <label style={{display:'block',marginBottom:8}}>Хоноглох газар<input name="accommodation" value={form.accommodation} onChange={handleChange} /></label>
-            <label style={{display:'block',marginBottom:8}}>Цуцлах нөхцөл<input name="cancellation" value={form.cancellation} onChange={handleChange} /></label>
-            <label style={{display:'block',marginBottom:8}}>Хэл / Жишээ: Монгол<input name="language" value={form.language} onChange={handleChange} /></label>
-            <label style={{display:'block',marginBottom:8}}>Утас<input name="phone" value={form.phone} onChange={handleChange} /></label>
+      <div style={{width:520, border:'1px solid #eee', borderRadius:10, padding:16, background:'#fff', boxShadow:'0 1px 2px rgba(0,0,0,0.03)'}}>
+        <h3 style={{marginTop:0,marginBottom:12}}>{editing ? 'Хөтөлбөр засварлах' : 'Шинэ хөтөлбөр нэмэх'}</h3>
+        <form onSubmit={editing ? handleUpdate : handleCreate} style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+          <div style={{gridColumn:'1 / span 2'}}>
+            <label style={{display:'block',fontSize:13,marginBottom:6,fontWeight:600}}>Аяллын нэр</label>
+            <input name="title" value={form.title} onChange={handleChange} required style={{width:'100%',padding:'10px 12px',borderRadius:8,border:'1px solid #e6e6e6'}} />
+          </div>
 
-            <div style={{marginTop:12}}>
-              <h4>Өдрүүд / маршрут</h4>
+          <div>
+            <label style={{display:'block',fontSize:13,marginBottom:6,fontWeight:600}}>Хугацаа</label>
+            <input name="time" value={form.time} onChange={handleChange} placeholder="Жишээ: 2 өдөр / 1 шөнө" style={{width:'100%',padding:'10px 12px',borderRadius:8,border:'1px solid #e6e6e6'}} />
+          </div>
+          <div>
+            <label style={{display:'block',fontSize:13,marginBottom:6,fontWeight:600}}>Үнэ</label>
+            <input name="price" value={form.price} onChange={handleChange} placeholder="Жишээ: 25000" style={{width:'100%',padding:'10px 12px',borderRadius:8,border:'1px solid #e6e6e6'}} />
+          </div>
+
+          <div>
+            <label style={{display:'block',fontSize:13,marginBottom:6,fontWeight:600}}>Хүний тоо</label>
+            <input name="people" value={form.people} onChange={handleChange} style={{width:'100%',padding:'10px 12px',borderRadius:8,border:'1px solid #e6e6e6'}} />
+          </div>
+          <div>
+            <label style={{display:'block',fontSize:13,marginBottom:6,fontWeight:600}}>Хүний дээд хэмжээ (capacity)</label>
+            <input name="capacity" value={form.capacity} onChange={handleChange} style={{width:'100%',padding:'10px 12px',borderRadius:8,border:'1px solid #e6e6e6'}} />
+          </div>
+
+          <div>
+            <label style={{display:'block',fontSize:13,marginBottom:6,fontWeight:600}}>Хоноглох газар</label>
+            <input name="accommodation" value={form.accommodation} onChange={handleChange} style={{width:'100%',padding:'10px 12px',borderRadius:8,border:'1px solid #e6e6e6'}} />
+          </div>
+          <div>
+            <label style={{display:'block',fontSize:13,marginBottom:6,fontWeight:600}}>Цуцлах нөхцөл</label>
+            <input name="cancellation" value={form.cancellation} onChange={handleChange} style={{width:'100%',padding:'10px 12px',borderRadius:8,border:'1px solid #e6e6e6'}} />
+          </div>
+
+          <div>
+            <label style={{display:'block',fontSize:13,marginBottom:6,fontWeight:600}}>Хэл</label>
+            <input name="language" value={form.language} onChange={handleChange} placeholder="Монгол" style={{width:'100%',padding:'10px 12px',borderRadius:8,border:'1px solid #e6e6e6'}} />
+          </div>
+          <div>
+            <label style={{display:'block',fontSize:13,marginBottom:6,fontWeight:600}}>Утас</label>
+            <input name="phone" value={form.phone} onChange={handleChange} style={{width:'100%',padding:'10px 12px',borderRadius:8,border:'1px solid #e6e6e6'}} />
+          </div>
+
+          <div style={{gridColumn:'1 / span 2'}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+              <h4 style={{margin:0,fontSize:15}}>Өдрүүд / маршрут</h4>
+              <button type="button" className="btn" onClick={addDay} style={{padding:'6px 10px'}}>Өдөр нэмэх</button>
+            </div>
+            <div style={{marginTop:10}}>
               {(form.days||[]).map((d,i) => (
-                <div key={i} style={{border:'1px solid #eee',padding:8,borderRadius:8,marginBottom:8}}>
-                  <div style={{display:'flex',gap:8}}>
-                    <input type="date" value={d.date||''} onChange={e => updateDay(i,'date', e.target.value)} style={{flex:0}} />
-                    <input placeholder="Гарчиг" value={d.title||''} onChange={e => updateDay(i,'title', e.target.value)} style={{flex:1}} />
-                    <button type="button" className="btn btn-ghost" onClick={() => removeDay(i)}>X</button>
+                <div key={i} style={{border:'1px solid #eee',padding:10,borderRadius:8,marginBottom:8,background:'#fbfbfd'}}>
+                  <div style={{display:'flex',gap:8,alignItems:'center'}}>
+                    <input type="date" value={d.date||''} onChange={e => updateDay(i,'date', e.target.value)} style={{flex:'0 0 150px',padding:8,borderRadius:6,border:'1px solid #e6e6e6'}} />
+                    <input placeholder="Гарчиг" value={d.title||''} onChange={e => updateDay(i,'title', e.target.value)} style={{flex:1,padding:8,borderRadius:6,border:'1px solid #e6e6e6'}} />
+                    <button type="button" className="btn btn-ghost" onClick={() => removeDay(i)} style={{marginLeft:8}}>X</button>
                   </div>
-                  <textarea placeholder="Тайлбар/үйл явдал" value={d.body||''} onChange={e => updateDay(i,'body', e.target.value)} style={{width:'100%',marginTop:8}} />
+                  <textarea placeholder="Тайлбар/үйл явдал" value={d.body||''} onChange={e => updateDay(i,'body', e.target.value)} style={{width:'100%',marginTop:8,padding:8,borderRadius:6,border:'1px solid #e6e6e6',minHeight:70}} />
                 </div>
               ))}
-              <div style={{marginTop:6}}><button type="button" className="btn" onClick={addDay}>Өдөр нэмэх</button></div>
             </div>
+          </div>
 
-            <label style={{display:'block',marginTop:8}}>Зураг оруулах
-              {/* allow selecting multiple files at once */}
-              <input type="file" accept="image/*" multiple onChange={handleImagePick} />
-            </label>
+          <div style={{gridColumn:'1 / span 2'}}>
+            <label style={{display:'block',fontSize:13,marginBottom:6,fontWeight:600}}>Зураг оруулах</label>
+            <input type="file" accept="image/*" multiple onChange={handleImagePick} />
             <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:8}}>
               {(form.images||[]).map((img,i) => (
                 <div key={i} style={{position:'relative',width:100,height:70,border:'1px solid #eee',borderRadius:6,overflow:'hidden',marginRight:8}}>
@@ -338,60 +511,17 @@ export default function AdminPrograms(){
                 </div>
               ))}
             </div>
-
-            <div style={{display:'flex',justifyContent:'flex-end',gap:8, marginTop:12}}>
-              {editing && <button type="button" className="btn btn-ghost" onClick={() => { setEditing(null); setForm(emptyForm) }}>Болих</button>}
-              <button className="btn" type="submit" disabled={loading}>{editing ? 'Хадгалах' : 'Нэмэх'}</button>
-            </div>
-          </form>
-        </div>
-      </section>
-
-      {/* Features (Landing) admin management */}
-      <section style={{marginTop:20}}>
-        <div style={{display:'flex', gap:20}}>
-          <div style={{flex:1}}>
-            <h3>Landing: Таны амралтыг онцгой болгох шалтгаанууд</h3>
-            <table style={{width:'100%',borderCollapse:'collapse'}}>
-              <thead><tr style={{textAlign:'left'}}><th>Id</th><th>Гарчиг</th><th></th></tr></thead>
-              <tbody>
-                {features.map(f => (
-                  <tr key={f.id} style={{borderTop:'1px solid #eee'}}>
-                    <td style={{padding:8}}>{f.id}</td>
-                    <td style={{padding:8}}>{f.title}</td>
-                    <td style={{padding:8}}>
-                      <button className="btn btn-ghost" onClick={() => handleFeatureEdit(f)}>Засах</button>
-                      <button className="btn" onClick={() => handleFeatureDelete(f.id)} style={{marginLeft:8}} disabled={loading}>Устгах</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
           </div>
 
-          <div style={{width:420}}>
-            <h3 style={{marginBottom:8}}>{editingFeature ? 'Элемент засварлах' : 'Шинэ элемент нэмэх'}</h3>
-            <form onSubmit={editingFeature ? handleFeatureUpdate : handleFeatureCreate}>
-              <label style={{display:'block',marginBottom:8}}>Гарчиг<input name="title" value={featureForm.title} onChange={handleFeatureChange} required /></label>
-              <label style={{display:'block',marginBottom:8}}>Товч тайлбар<input name="lead" value={featureForm.lead} onChange={handleFeatureChange} /></label>
-              <label style={{display:'block',marginBottom:8}}>Дэлгэрэнгүй<textarea name="description" value={featureForm.description} onChange={handleFeatureChange} /></label>
-              <label style={{display:'block',marginTop:8}}>Зураг<input type="file" accept="image/*" onChange={handleFeatureImagePick} /></label>
-              {featureForm.image && (
-                <div style={{marginTop:8}}>
-                  <img src={featureForm.image} alt="preview" style={{width:140,height:90,objectFit:'cover',borderRadius:6}} />
-                </div>
-              )}
-              <div style={{display:'flex',justifyContent:'flex-end',gap:8, marginTop:12}}>
-                {editingFeature && <button type="button" className="btn btn-ghost" onClick={() => { setEditingFeature(null); setFeatureForm({ title:'', lead:'', description:'', image:'' }) }}>Болих</button>}
-                <button className="btn" type="submit" disabled={loading}>{editingFeature ? 'Хадгалах' : 'Нэмэх'}</button>
-              </div>
-            </form>
+          <div style={{gridColumn:'1 / span 2',display:'flex',justifyContent:'flex-end',gap:8,marginTop:6}}>
+            <button type="button" className="btn btn-ghost" onClick={() => { setEditing(null); setForm(emptyForm) }}>Болих</button>
+            <button className="btn" type="submit" disabled={loading} style={{padding:'10px 16px'}}>{editing ? 'Хадгалах' : 'Нэмэх'}</button>
           </div>
-        </div>
-      </section>
+        </form>
+      </div>
+
+      {/* Features (Landing) admin management removed as requested */}
 
     </div>
   )
 }
-
-  // feature helpers are defined inside the component body above — duplicate helpers removed

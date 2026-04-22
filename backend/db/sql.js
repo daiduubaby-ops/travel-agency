@@ -32,12 +32,14 @@ async function init() {
     const pragma = db.exec("PRAGMA table_info('users');");
     let hasIsAdmin = false;
     let hasAvatar = false;
+    let hasEmailHmac = false;
     if (pragma && pragma[0] && pragma[0].values) {
       const cols = pragma[0].columns || [];
       const nameIdx = cols.indexOf('name');
       for (const row of pragma[0].values) {
         if (row[nameIdx] === 'isAdmin') { hasIsAdmin = true; }
         if (row[nameIdx] === 'avatar') { hasAvatar = true; }
+        if (row[nameIdx] === 'email_hmac') { hasEmailHmac = true; }
         if (hasIsAdmin && hasAvatar) break;
       }
     }
@@ -47,6 +49,9 @@ async function init() {
     }
     if (!hasAvatar) {
       try { db.run("ALTER TABLE users ADD COLUMN avatar TEXT;"); } catch (e) { /* ignore if table missing */ }
+    }
+    if (!hasEmailHmac) {
+      try { db.run("ALTER TABLE users ADD COLUMN email_hmac TEXT;"); } catch (e) { /* ignore if table missing */ }
     }
   } catch (e) {
     // ignore — if users table doesn't exist yet or PRAGMA fails, creation below will handle it
@@ -85,6 +90,7 @@ async function init() {
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     email TEXT NOT NULL UNIQUE,
+    email_hmac TEXT UNIQUE,
     password TEXT NOT NULL,
     role TEXT NOT NULL DEFAULT 'user',
     isAdmin INTEGER NOT NULL DEFAULT 0,
@@ -130,6 +136,17 @@ async function init() {
     updatedAt TEXT
   );`);
 
+  // news table for admin-managed news/articles
+  db.run(`CREATE TABLE IF NOT EXISTS news (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    img TEXT,
+    date TEXT,
+    desc TEXT,
+    createdAt TEXT,
+    updatedAt TEXT
+  );`);
+
   // features table: items shown on the Landing page under "Таны амралтыг онцгой болгох шалтгаанууд"
   db.run(`CREATE TABLE IF NOT EXISTS features (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -142,8 +159,51 @@ async function init() {
     updatedAt TEXT
   );`);
 
+  // generic key-value settings table for small admin-managed UI settings
+  db.run(`CREATE TABLE IF NOT EXISTS settings (
+    key TEXT PRIMARY KEY,
+    value TEXT,
+    updatedAt TEXT
+  );`);
+
+  // home service bookings (no payment-related fields)
+  db.run(`CREATE TABLE IF NOT EXISTS home_bookings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    patient_name TEXT NOT NULL,
+    phone TEXT NOT NULL,
+    service_id TEXT NOT NULL,
+    address_text TEXT NOT NULL,
+    latitude REAL,
+    longitude REAL,
+    preferred_date TEXT NOT NULL,
+    preferred_time TEXT NOT NULL,
+    assigned_doctor_id TEXT,
+    status TEXT NOT NULL DEFAULT 'pending',
+    admin_note TEXT,
+    created_at TEXT,
+    updated_at TEXT
+  );`);
+
   // persist in case created
   persist();
+
+  // Ensure bookings table has a programId column to store program/bookings
+  try {
+    const pragmaBookings = db.exec("PRAGMA table_info('bookings');");
+    let hasProgramId = false;
+    if (pragmaBookings && pragmaBookings[0] && pragmaBookings[0].values) {
+      const cols = pragmaBookings[0].columns || [];
+      const nameIdx = cols.indexOf('name');
+      for (const row of pragmaBookings[0].values) {
+        if (row[nameIdx] === 'programId') { hasProgramId = true; break; }
+      }
+    }
+    if (!hasProgramId) {
+      try { db.run('ALTER TABLE bookings ADD COLUMN programId INTEGER;'); } catch (e) { /* ignore if table missing */ }
+    }
+  } catch (e) {
+    // ignore
+  }
 }
 
 function getWrapper() {
@@ -169,11 +229,30 @@ function getWrapper() {
           stmt.bind(params);
           stmt.run();
           stmt.free();
+          // persist DB after statement execution
           persist();
-          // get last insert id
-          const res = db.exec('SELECT last_insert_rowid() AS id');
-          const id = (res && res[0] && res[0].values && res[0].values[0]) ? res[0].values[0][0] : undefined;
-          return { lastInsertRowid: id };
+          // get last insert id (be tolerant to sql.js return shapes)
+          try {
+            const res = db.exec('SELECT last_insert_rowid() AS id');
+            let id;
+            if (res && res[0] && res[0].values && res[0].values[0]) {
+              // values[0] may be an array of column values
+              const firstRow = res[0].values[0];
+              if (Array.isArray(firstRow)) id = firstRow[0];
+              else if (typeof firstRow === 'object') id = firstRow.id ?? Object.values(firstRow)[0];
+              else id = firstRow;
+            }
+            // coerce to number when possible
+            if (id !== undefined && id !== null) {
+              const nid = Number(id);
+              return { lastInsertRowid: Number.isFinite(nid) ? nid : id };
+            }
+            return { lastInsertRowid: undefined };
+          } catch (e) {
+            // in case last_insert_rowid() is not available or exec fails, return undefined
+            console.error('Failed to read last_insert_rowid()', e && e.message ? e.message : e);
+            return { lastInsertRowid: undefined };
+          }
         }
       };
     },

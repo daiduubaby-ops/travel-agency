@@ -1,16 +1,34 @@
 import React, { useEffect, useState } from 'react'
 import './Dashboard.css'
 
+const HOME_STATUS_OPTIONS = [
+  { value: 'pending', label: 'Хүлээгдэж байна' },
+  { value: 'confirmed', label: 'Баталгаажсан' },
+  { value: 'on_the_way', label: 'Замдаа' },
+  { value: 'completed', label: 'Дууссан' },
+  { value: 'cancelled', label: 'Цуцлагдсан' },
+]
+
+const HOME_STATUS_LABELS = HOME_STATUS_OPTIONS.reduce((acc, cur) => {
+  acc[cur.value] = cur.label
+  return acc
+}, {})
+
 export default function Dashboard(){
   const user = (() => { try { return JSON.parse(localStorage.getItem('user')) } catch { return null } })()
+  const isAdmin = !!user?.isAdmin
   const [bookings, setBookings] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [homeBookings, setHomeBookings] = useState([])
+  const [homeLoading, setHomeLoading] = useState(false)
+  const [homeError, setHomeError] = useState('')
+  const [homeMsg, setHomeMsg] = useState('')
   // Allow overriding API base during development (set VITE_API_URL in .env)
   const API = import.meta.env.VITE_API_URL || ''
 
   useEffect(() => {
-    if(!user) return
+    if(!user || isAdmin) return
     async function load(){
       setLoading(true)
       setError('')
@@ -39,7 +57,94 @@ export default function Dashboard(){
       }finally{ setLoading(false) }
     }
     load()
-  }, [user])
+  }, [user, isAdmin])
+
+  useEffect(() => {
+    if (!user || !isAdmin) return
+    loadHomeBookings()
+  }, [user, isAdmin])
+
+  async function loadHomeBookings(){
+    setHomeLoading(true)
+    setHomeError('')
+    setHomeMsg('')
+    try {
+      const token = localStorage.getItem('token')
+      const res = await fetch('/api/admin/home-bookings', {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      })
+      const data = await res.json().catch(() => ([]))
+      if (!res.ok) {
+        setHomeError(data.message || 'Гэр захиалгууд унших үед алдаа гарлаа')
+        setHomeBookings([])
+      } else {
+        setHomeBookings(Array.isArray(data) ? data : [])
+      }
+    } catch (e) {
+      setHomeError('Сүлжээний алдаа')
+      setHomeBookings([])
+    } finally {
+      setHomeLoading(false)
+    }
+  }
+
+  async function updateHomeStatus(item, status){
+    setHomeMsg('')
+    setHomeError('')
+    try {
+      const token = localStorage.getItem('token')
+      const res = await fetch(`/api/admin/home-bookings/${item.id}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ status, admin_note: item.admin_note || '' })
+      })
+      const data = await res.json().catch(() => ({}))
+      if(!res.ok){
+        setHomeError(data.message || 'Төлөв шинэчлэх үед алдаа гарлаа')
+        return
+      }
+      setHomeBookings(prev => prev.map(x => x.id === data.id ? data : x))
+      setHomeMsg('Төлөв шинэчлэгдлээ')
+    } catch (e) {
+      setHomeError('Сүлжээний алдаа')
+    }
+  }
+
+  async function assignDoctor(item){
+    const doctor = window.prompt('Томилох эмчийн ID/Нэр оруулна уу', item.assigned_doctor_id || '')
+    if(!doctor) return
+    setHomeMsg('')
+    setHomeError('')
+    try {
+      const token = localStorage.getItem('token')
+      const res = await fetch(`/api/admin/home-bookings/${item.id}/assign-doctor`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ assigned_doctor_id: doctor, admin_note: item.admin_note || '' })
+      })
+      const data = await res.json().catch(() => ({}))
+      if(!res.ok){
+        setHomeError(data.message || 'Эмч томилох үед алдаа гарлаа')
+        return
+      }
+      setHomeBookings(prev => prev.map(x => x.id === data.id ? data : x))
+      setHomeMsg('Эмч амжилттай томилогдлоо')
+    } catch (e) {
+      setHomeError('Сүлжээний алдаа')
+    }
+  }
+
+  async function saveAdminNote(item, value){
+    setHomeBookings(prev => prev.map(x => x.id === item.id ? { ...x, admin_note: value } : x))
+    const currentStatus = item.status || 'pending'
+    await updateHomeStatus({ ...item, admin_note: value }, currentStatus)
+  }
 
   if(!user) {
     return (
@@ -55,11 +160,16 @@ export default function Dashboard(){
   return (
     <div className="dashboard">
       <div className="container">
-        <h2>{user.name} - таны дашбоард</h2>
+        <h2>{isAdmin ? 'Админ хяналтын самбар' : `${user.name} -хяналтын самбар`}</h2>
         <p>И-мэйл: {user.email}</p>
-        {user.isAdmin && (
-          <p><a href="/admin/programs" className="btn">Админ: Аяллын хөтөлбөрийг удирдах</a></p>
+        {isAdmin && (
+          <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:12}}>
+            <button className="btn">Гэр захиалга</button>
+            <a href="/admin/programs" className="btn">Админ: Аяллын хөтөлбөр</a>
+          </div>
         )}
+
+        {!isAdmin && (
         <section>
           <h3>Таны захиалгууд</h3>
           {loading && <p>Захиалгуудыг уншиж байна…</p>}
@@ -80,6 +190,69 @@ export default function Dashboard(){
             </div>
           )}
         </section>
+        )}
+
+        {isAdmin && (
+          <section>
+            <h3>Гэр захиалгууд</h3>
+            {homeLoading && <p>Уншиж байна…</p>}
+            {homeError && <p style={{color:'red'}}>{homeError}</p>}
+            {homeMsg && <p style={{color:'#0b8457'}}>{homeMsg}</p>}
+
+            {!homeLoading && homeBookings.length === 0 && <p>Одоогоор гэр захиалга байхгүй байна.</p>}
+            {!homeLoading && homeBookings.length > 0 && (
+              <div style={{overflowX:'auto'}}>
+                <table style={{width:'100%',borderCollapse:'collapse'}}>
+                  <thead>
+                    <tr style={{textAlign:'left',borderBottom:'1px solid #e5e7eb'}}>
+                      <th>ID</th>
+                      <th>Үйлчлүүлэгч</th>
+                      <th>Утас</th>
+                      <th>Хаяг</th>
+                      <th>Үйлчилгээ</th>
+                      <th>Огноо/цаг</th>
+                      <th>Томилогдсон эмч</th>
+                      <th>Төлөв</th>
+                      <th>Үйлдэл</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {homeBookings.map((hb) => (
+                      <tr key={hb.id} style={{borderBottom:'1px solid #f1f5f9',verticalAlign:'top'}}>
+                        <td style={{padding:'8px 6px'}}>{hb.booking_number || hb.id}</td>
+                        <td style={{padding:'8px 6px'}}>{hb.patient_name}</td>
+                        <td style={{padding:'8px 6px'}}>{hb.phone}</td>
+                        <td style={{padding:'8px 6px',maxWidth:170,whiteSpace:'pre-wrap'}}>{hb.address_text}</td>
+                        <td style={{padding:'8px 6px'}}>{hb.service_id}</td>
+                        <td style={{padding:'8px 6px'}}>{hb.preferred_date} {hb.preferred_time}</td>
+                        <td style={{padding:'8px 6px'}}>{hb.assigned_doctor_id || '-'}</td>
+                        <td style={{padding:'8px 6px'}}>{HOME_STATUS_LABELS[hb.status] || hb.status}</td>
+                        <td style={{padding:'8px 6px',minWidth:220}}>
+                          <div style={{display:'grid',gap:6}}>
+                            <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+                              <button className="btn btn-ghost" onClick={() => updateHomeStatus(hb, 'confirmed')}>Баталгаажуулах</button>
+                              <button className="btn btn-ghost" onClick={() => assignDoctor(hb)}>Эмч томилох</button>
+                              <button className="btn btn-ghost" onClick={() => updateHomeStatus(hb, 'cancelled')}>Цуцлах</button>
+                            </div>
+                            <select value={hb.status || 'pending'} onChange={(e) => updateHomeStatus(hb, e.target.value)}>
+                              {HOME_STATUS_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                            </select>
+                            <textarea
+                              placeholder="Админ тэмдэглэл"
+                              value={hb.admin_note || ''}
+                              onChange={(e) => setHomeBookings(prev => prev.map(x => x.id === hb.id ? { ...x, admin_note: e.target.value } : x))}
+                              onBlur={(e) => saveAdminNote(hb, e.target.value)}
+                            />
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+        )}
       </div>
     </div>
   )

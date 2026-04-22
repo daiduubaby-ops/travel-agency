@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { getDb } = require('../utils/db');
+const { getDb } = require('../db');
+const { encrypt, decrypt, hmac } = require('../../utils/crypto');
 
 // Register
 router.post('/register', async (req, res) => {
@@ -11,15 +12,21 @@ router.post('/register', async (req, res) => {
     if (!name || !email || !password) return res.status(400).json({ message: 'Мэдээлэл дутуу байна' });
 
     const db = getDb();
-    const existing = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+    // encrypt name and email (non-deterministic) and compute deterministic HMAC for lookups
+    const encName = encrypt(name);
+    const encEmail = encrypt(email);
+    const emailHmac = hmac(email);
+    const existing = db.prepare('SELECT * FROM users WHERE email_hmac = ?').get(emailHmac);
     if (existing) return res.status(400).json({ message: 'И-мэйл аль хэдийн ашиглагдаж байна' });
 
     const hashed = await bcrypt.hash(password, 10);
     const now = new Date().toISOString();
     // By default new users are not admins (isAdmin = 0)
-    const info = db.prepare('INSERT INTO users (name, email, password, role, isAdmin, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?)').run(name, email, hashed, 'user', 0, now, now);
-    // fetch by email (unique) to avoid relying on lastInsertRowid behavior
-    const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+    const info = db.prepare('INSERT INTO users (name, email, email_hmac, password, role, isAdmin, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(encName, encEmail, emailHmac, hashed, 'user', 0, now, now);
+    // fetch by email_hmac (deterministic)
+    const userRow = db.prepare('SELECT * FROM users WHERE email_hmac = ?').get(emailHmac);
+    // decrypt fields for response
+    const user = userRow ? Object.assign({}, userRow, { name: decrypt(userRow.name), email: decrypt(userRow.email) }) : userRow;
     const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
     // include avatar as absolute URL if present
     const protocol = req.protocol
@@ -39,7 +46,9 @@ router.post('/login', async (req, res) => {
     if (!email || !password) return res.status(400).json({ message: 'Мэдээлэл дутуу байна' });
 
     const db = getDb();
-    const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+    const emailHmac = hmac(email);
+    const userRow = db.prepare('SELECT * FROM users WHERE email_hmac = ?').get(emailHmac);
+    const user = userRow ? Object.assign({}, userRow, { name: decrypt(userRow.name), email: decrypt(userRow.email) }) : userRow;
     if (!user) return res.status(400).json({ message: 'Нэвтрэх мэдээлэл буруу байна' });
 
     const match = await bcrypt.compare(password, user.password);
