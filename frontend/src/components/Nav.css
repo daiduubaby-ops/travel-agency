@@ -24,15 +24,23 @@
 .brand{font-weight:800;color:var(--muted-white);text-decoration:none;letter-spacing:0.6px}
 .site-nav .brand{
   display:inline-block;
-  padding:8px 14px;
-  border-radius:10px;
-  background: rgba(245, 158, 11, 0.06);
-  border: 1px solid rgba(245, 158, 11, 0.1);
+  /* remove background & border so icon is shown cleanly */
+  padding:4px 6px;
+  border-radius:6px;
+  background: transparent;
+  border: none;
   color: var(--muted-white);
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
 }
 .site-nav .brand:hover{
-  background: rgba(245, 158, 11, 0.1);
+  background: rgba(255,255,255,0.03);
+}
+
+.site-nav .brand svg{
+  display:block;
+  width:24px;
+  height:24px;
+  color: var(--gold);
 }
 
 .nav-links{display:flex;align-items:center;gap:12px}

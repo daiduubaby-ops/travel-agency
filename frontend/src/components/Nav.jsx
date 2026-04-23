@@ -30,7 +30,13 @@ export default function Nav() {
     <nav className={`site-nav ${isScrolled ? 'scrolled' : ''}`}>
       <div className="container nav-inner">
         <div className="nav-left">
-          <a className="brand" href="/" aria-label="home"></a>
+          <a className="brand" href="/" aria-label="home">
+            {/* Outline home icon (no background fill) using stroke=currentColor */}
+            <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true" role="img" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 10.5L12 4l9 6.5" />
+              <path d="M5 11v7a1 1 0 0 0 1 1h3v-5h6v5h3a1 1 0 0 0 1-1v-7" />
+            </svg>
+          </a>
         </div>
 
         <div className="nav-links">

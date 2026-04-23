@@ -68,6 +68,7 @@ export default function Listings(){
   const [modalItem, setModalItem] = useState(null)
   const [modalForm, setModalForm] = useState({ images: [], description: '', amenities: '' })
   const [modalImageInput, setModalImageInput] = useState('')
+  const [modalMainImageIdx, setModalMainImageIdx] = useState(0)
   const [modalTab, setModalTab] = useState('view') // 'view' or 'edit' (admin only)
 
   function handleModalFileUpload(files){
@@ -209,6 +210,8 @@ export default function Listings(){
     }catch(e){
       setModalForm({ images: Array.isArray(item.images) ? item.images : (item.image ? [item.image] : []), description: item.description || '', amenities: item.amenities || '' })
     }
+    // reset selected main image index when opening
+    setModalMainImageIdx(0)
     // ensure view state and bookings are loaded for the modal calendar
     setViewMap(prev => ({ ...prev, [item.id]: prev[item.id] || { year: now.getFullYear(), month: now.getMonth() } }))
     loadBookingsFor(item)
@@ -224,6 +227,12 @@ export default function Listings(){
     if(modalOpen){ document.addEventListener('keydown', onKey) }
     return () => { document.removeEventListener('keydown', onKey) }
   }, [modalOpen])
+
+  // ensure main image index stays valid when images change
+  useEffect(() => {
+    const imgs = modalForm.images || []
+    if(modalMainImageIdx >= imgs.length) setModalMainImageIdx(0)
+  }, [modalForm.images, modalMainImageIdx])
 
   // navigation handlers for calendar (per-item)
   function prevMonth(id){
@@ -485,7 +494,12 @@ export default function Listings(){
                   <p style={{margin:'0'}}>{g.location} — {formatMNT(g.pricePerNight)} {g.isSample && <span style={{color:'#6b7280',marginLeft:8,fontSize:12}}></span>}</p>
                 </div>
                 <div style={{marginLeft:8}}>
-                  <button className="btn btn-outline" onClick={(e) => { e.preventDefault(); openModal(g) }} style={{padding:'6px 8px'}} aria-label={`Дэлгэрэнгүй ${g.title}`}>
+                  <button
+                    className="btn btn-outline"
+                    onClick={(e) => { e.preventDefault(); openModal(g) }}
+                    style={{padding:'6px 8px', background:'#000', color:'#fff', border:'1px solid #000'}}
+                    aria-label={`Дэлгэрэнгүй ${g.title}`}
+                  >
                     дэлгэрэнгүй
                   </button>
                 </div>
@@ -518,7 +532,7 @@ export default function Listings(){
                             <div style={{textAlign:'right'}}>
                             <div style={{fontSize:12,color:'#6b7280'}}>Сонгосон: {sel.length}</div>
                             <div style={{marginTop:6}}>
-                              <button className="btn btn-outline" onClick={() => openModal(item)} aria-label={`Дэлгэрэнгүй ${item.title}`}>дэлгэрэнгүй</button>
+                              <button className="btn btn-outline" onClick={() => openModal(item)} aria-label={`Дэлгэрэнгүй ${item.title}`} style={{background:'#000',color:'#fff',border:'1px solid #000'}}>дэлгэрэнгүй</button>
                             </div>
                             </div>
                         </div>
@@ -613,11 +627,28 @@ export default function Listings(){
                       </div>
                       <div style={{display:'flex',gap:16,alignItems:'flex-start',flexWrap:'wrap'}}>
                         <div style={{flex:'1 1 420px',minWidth:280}}>
-                          {getItemPreviewImage(modalItem) ? (
-                            <img src={getItemPreviewImage(modalItem)} alt={modalItem.title} style={{width:'100%',height:360,objectFit:'cover',borderRadius:8,border:'1px solid #e5e7eb'}} />
-                          ) : (
-                            <div style={{width:'100%',height:360,display:'flex',alignItems:'center',justifyContent:'center',background:'#f8fafc',borderRadius:8}}>Зураг байхгүй</div>
-                          )}
+                          {(() => {
+                            const imgs = Array.isArray(modalForm.images) && modalForm.images.length > 0 ? modalForm.images : (Array.isArray(modalItem?.images) && modalItem.images.length > 0 ? modalItem.images : (modalItem?.image ? [modalItem.image] : []))
+                            const main = imgs[modalMainImageIdx] || imgs[0] || getItemPreviewImage(modalItem)
+                            return (
+                              <div>
+                                {main ? (
+                                  <img src={main} alt={modalItem.title} style={{width:'100%',height:360,objectFit:'cover',borderRadius:8,border:'1px solid #e5e7eb'}} />
+                                ) : (
+                                  <div style={{width:'100%',height:360,display:'flex',alignItems:'center',justifyContent:'center',background:'#f8fafc',borderRadius:8}}>Зураг байхгүй</div>
+                                )}
+                                {imgs && imgs.length > 0 && (
+                                  <div style={{display:'flex',gap:8,marginTop:8,flexWrap:'wrap'}}>
+                                    {imgs.map((u,idx) => (
+                                      <button key={u+idx} onClick={() => setModalMainImageIdx(idx)} aria-label={`Image ${idx+1}`} style={{width:90,height:60,padding:0,border: modalMainImageIdx===idx ? '2px solid #111' : '1px solid #e5e7eb',borderRadius:6,overflow:'hidden',background:'transparent',cursor:'pointer'}}>
+                                        <img src={u} alt={`thumb-${idx}`} style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}} />
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          })()}
                         </div>
                         <div style={{flex:'1 1 360px',minWidth:260}}>
                           {/* Admin-only Manage tab; regular users see only the View content. */}
@@ -727,7 +758,7 @@ export default function Listings(){
                     <div style={{color:'#374151'}}>Нийт хоног: <strong>{totals.nights}</strong></div>
                     <div style={{color:'#374151'}}>Нийт үнэ: <strong>{formatMNT(totals.price)}</strong></div>
                     <div>
-                      <button className="btn btn-primary" onClick={handleBookSelected} disabled={loading} style={{marginLeft:12}}>
+                      <button className="btn btn-primary" onClick={handleBookSelected} disabled={loading} style={{marginLeft:12, background:'#000', border:'1px solid #000', color:'#fff'}}>
                         {loading ? 'Захиалж байна...' : 'Захиалга баталгаажуулах'}
                       </button>
                     </div>

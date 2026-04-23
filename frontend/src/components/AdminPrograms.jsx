@@ -149,10 +149,11 @@ export default function AdminPrograms(){
     let mounted = true
     async function load(){
       try{
-        const res = await fetch('/public/home-hero.jpg')
+        // prefer .jpg (file in public folder is hero_photo.jpg)
+        const res = await fetch('/public/hero_photo.jpg')
         if(!res.ok) return
         if(!mounted) return
-        setHomePreview('/public/home-hero.jpg')
+        setHomePreview('/public/hero_photo.jpg')
       }catch(e){/* ignore */}
     }
     load()

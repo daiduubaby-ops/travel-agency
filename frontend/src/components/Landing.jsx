@@ -31,7 +31,9 @@ const IconAdventure = () => (
 // Prefer the backend static URL (VITE_API_URL) when available so the
 // hero loads even when the frontend is served separately from the backend.
 const API_BASE = import.meta.env?.VITE_API_URL || 'http://localhost:5000'
-const sampleHero = `${API_BASE}/public/home-hero.jpg`
+// Prefer the frontend public asset (served at /hero_photo.jpg by Vite)
+// but also try backend-served /public paths when available.
+const sampleHero = '/hero_photo.jpg'
 
 // The hero image can be replaced by an admin via the admin UI which
 // uploads to /api/upload/home and the server writes it to
@@ -59,16 +61,24 @@ export default function Landing(){
     // try fetch the backend-served hero (proxy in dev -> /public/home-hero.jpg)
     // try absolute backend URL first (works when backend is running),
     // then fall back to proxied /public path which is handled by Vite proxy.
-    fetch(`${API_BASE}/public/home-hero.jpg`, { method: 'HEAD' }).then(res => {
+    // 1) try backend absolute URL (useful when frontend is served separately)
+    fetch(`${API_BASE}/public/hero_photo.jpg`, { method: 'HEAD' }).then(res => {
       if(!mounted) return
-      if(res.ok) setHero(`${API_BASE}/public/home-hero.jpg`)
+      if(res.ok) setHero(`${API_BASE}/public/hero_photo.jpg`)
     }).catch(()=>{/* ignore */})
-    // second attempt: try proxied path (dev server proxy)
+    // 2) try proxied backend path (/public) — Vite proxy maps /public to backend
     .finally(() => {
-      fetch('/public/home-hero.jpg', { method: 'HEAD' }).then(res => {
+      fetch('/public/hero_photo.jpg', { method: 'HEAD' }).then(res => {
         if(!mounted) return
-        if(res.ok && hero !== '/public/home-hero.jpg') setHero('/public/home-hero.jpg')
+        if(res.ok) setHero('/public/hero_photo.jpg')
       }).catch(()=>{/* ignore */})
+      // 3) final fallback: bundled frontend public asset served at /hero_photo.jpg
+      .finally(() => {
+        fetch('/hero_photo.jpg', { method: 'HEAD' }).then(res => {
+          if(!mounted) return
+          if(res.ok) setHero('/hero_photo.jpg')
+        }).catch(()=>{/* ignore */})
+      })
     })
     return () => { mounted = false }
   }, [])
@@ -81,7 +91,11 @@ export default function Landing(){
       <header
         className="hero has-hero half-hero"
         style={{
+          // set both the explicit background-image and the CSS variable used by
+          // Landing.css (.hero.half-hero uses var(--hero-image)). Some browsers
+          // or build setups may prefer the CSS variable path, so set both to be safe.
           backgroundImage: `linear-gradient(180deg, rgba(3,37,65,0.22), rgba(3,37,65,0.06)), url(${hero})`,
+          '--hero-image': `url(${hero})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'

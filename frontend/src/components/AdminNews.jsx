@@ -80,6 +80,17 @@ export default function AdminNews() {
     reader.readAsDataURL(file)
   }
 
+  // normalize image paths (same logic as News.getImgUrl)
+  function getImgUrl(img) {
+    if (!img) return ''
+    if (typeof img !== 'string') return ''
+    if (img.startsWith('http://') || img.startsWith('https://')) return img
+    if (img.startsWith('data:') || img.startsWith('blob:')) return img
+    if (img.startsWith('/public')) return img
+    if (img.startsWith('/')) return `/public${img}`
+    return `/public/${img}`
+  }
+
   function addNews(e) {
     e.preventDefault()
     if (!form.title.trim()) {
@@ -95,15 +106,40 @@ export default function AdminNews() {
       return
     }
     if (editingId) {
-      const next = items.map((n) => (
-        n.id === editingId
-          ? { ...n, ...form, date: form.date || n.date || new Date().toISOString().slice(0, 10) }
-          : n
-      ))
-      save(next)
-      setForm(emptyForm)
-      setEditingId(null)
-      setMessage('Мэдээ амжилттай засагдлаа')
+      // attempt to update on server when admin token available
+      (async () => {
+        try {
+          const token = localStorage.getItem('token')
+          if (!token) throw new Error('Not authenticated')
+          const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
+          const res = await fetch(`/api/admin/news/${editingId}`, { method: 'PUT', headers, body: JSON.stringify({ title: form.title, img: form.img, date: form.date, desc: form.desc }) })
+          if (!res.ok) {
+            const errJson = await res.json().catch(()=>({}))
+            throw new Error(errJson.message || 'Server error')
+          }
+          const saved = await res.json().catch(()=>null)
+          const next = items.map((n) => (
+            n.id === editingId
+              ? (saved || { ...n, ...form, date: form.date || n.date || new Date().toISOString().slice(0, 10) })
+              : n
+          ))
+          save(next)
+          setForm(emptyForm)
+          setEditingId(null)
+          setMessage('Мэдээ амжилттай засагдлаа')
+        } catch (err) {
+          // fallback to local update
+          const next = items.map((n) => (
+            n.id === editingId
+              ? { ...n, ...form, date: form.date || n.date || new Date().toISOString().slice(0, 10) }
+              : n
+          ))
+          save(next)
+          setForm(emptyForm)
+          setEditingId(null)
+          setMessage(`Мэдээ локалд шинэчлэгдлээ (алдаа: ${err && err.message ? err.message : 'unknown'})`)
+        }
+      })()
       return
     }
 
@@ -168,13 +204,33 @@ export default function AdminNews() {
 
   function removeNews(id) {
     if (!window.confirm('Энэ мэдээг устгах уу?')) return
-    const next = items.filter((n) => n.id !== id)
-    save(next)
-    if (editingId === id) {
-      setForm(emptyForm)
-      setEditingId(null)
-    }
-    setMessage('Мэдээ устгагдлаа')
+    ;(async () => {
+      try {
+        const token = localStorage.getItem('token')
+        if (!token) throw new Error('Not authenticated')
+        const res = await fetch(`/api/admin/news/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } })
+        if (!res.ok) {
+          const errJson = await res.json().catch(()=>({}))
+          throw new Error(errJson.message || 'Server error')
+        }
+        const next = items.filter((n) => n.id !== id)
+        save(next)
+        if (editingId === id) {
+          setForm(emptyForm)
+          setEditingId(null)
+        }
+        setMessage('Мэдээ устгагдлаа')
+      } catch (err) {
+        // fallback to local delete
+        const next = items.filter((n) => n.id !== id)
+        save(next)
+        if (editingId === id) {
+          setForm(emptyForm)
+          setEditingId(null)
+        }
+        setMessage(`Мэдээ локалд устгагдлаа (алдаа: ${err && err.message ? err.message : 'unknown'})`)
+      }
+    })()
   }
 
   function startEdit(item) {
@@ -244,7 +300,16 @@ export default function AdminNews() {
             <tr key={n.id || `${n.title}-${i}`} style={{ borderTop: '1px solid #eee' }}>
               <td style={{ padding: 8 }}>{n.title}</td>
               <td style={{ padding: 8 }}>{n.date}</td>
-              <td style={{ padding: 8 }}>{n.img || '-'}</td>
+              <td style={{ padding: 8, verticalAlign: 'middle' }}>
+                {n.img ? (
+                  <img
+                    src={getImgUrl(n.img)}
+                    alt={n.title || 'news image'}
+                    style={{ width: 120, height: 72, objectFit: 'cover', borderRadius: 6, border: '1px solid #e6e7ea' }}
+                    onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/public/placeholder.svg' }}
+                  />
+                ) : '-'}
+              </td>
               <td style={{ padding: 8, maxWidth: 360 }}>{n.desc || '-'}</td>
               <td style={{ padding: 8 }}>
                 <div style={{ display: 'flex', gap: 8 }}>
