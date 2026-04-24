@@ -777,22 +777,115 @@ select:focus{
   border-color: rgba(15, 23, 42, 0.25);
 }
 
-/* Listing card subtle effects */
-.listing.small{
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 10px;
-  transition: all 0.2s ease;
-  backdrop-filter: blur(4px);
+/* Listing left-panel card styles (match requested "дэлгэрэнгүй" look) */
+.listings.two-column{
+  gap: 18px;
 }
-.listing.small:hover{
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.12);
+
+.gers-list{
+  width: min(100%, 360px);
 }
-.listing.small.selected{
-  background: rgba(37, 99, 235, 0.08);
-  border-color: rgba(37, 99, 235, 0.2);
-  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.1);
+
+.listing.small.listing-item{
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 12px;
+  margin-bottom: 10px;
+  border-radius: 14px;
+  border: 1px solid #cfd8e3;
+  background: #f8fafd;
+  transition: border-color .2s ease, background-color .2s ease, box-shadow .2s ease;
+}
+
+.listing.small.listing-item:hover{
+  background: #f1f5fb;
+  border-color: #b8c7da;
+}
+
+.listing.small.listing-item.selected{
+  background: #eaf1ff;
+  border-color: #93b7ff;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+.listing.small.listing-item input[type="checkbox"]{
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  accent-color: #0b63f3;
+}
+
+.listing-card-main{
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+
+.listing-card-main .listing-body{
+  padding: 0;
+}
+
+.listing-card-main .listing-body h4{
+  margin: 0;
+  font-size: 32px;
+  line-height: 1.05;
+  color: #111827;
+  font-weight: 800;
+}
+
+.listing-card-main .listing-body p{
+  margin: 2px 0 0;
+  font-size: 30px;
+  line-height: 1.05;
+  color: #111827;
+  font-weight: 500;
+}
+
+.listing-detail-btn{
+  border: none;
+  border-radius: 999px;
+  padding: 10px 14px;
+  background: #000;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.listing-detail-btn:hover{
+  background: #111;
+}
+
+@media (max-width: 640px){
+  .gers-list{width: 100%;}
+
+  .listing.small.listing-item{
+    grid-template-columns: auto 1fr auto;
+    gap: 10px;
+    padding: 12px 10px;
+  }
+
+  .listing-card-main .listing-body h4{
+    font-size: 37px;
+  }
+
+  .listing-card-main .listing-body p{
+    font-size: 35px;
+  }
+
+  .listing-detail-btn{
+    font-size: 12px;
+    padding: 10px 12px;
+  }
 }
 
 /* Selected footer with subtle translucent */
@@ -1034,4 +1127,52 @@ select:focus{
   .program-grid{
     grid-template-columns: 1fr;
   }
+}
+
+/* ================================
+   Footer blue background + white text FIX
+   Энэ хэсгийг хамгийн доор байрлуулсан тул дээрх footer-ийн хуучин color-уудыг дарна.
+   ================================ */
+.site-footer,
+.footer,
+.site-footer.dark-footer {
+  background: linear-gradient(135deg, #1e40af, #2563eb) !important;
+  color: #ffffff !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.18) !important;
+}
+
+.site-footer *,
+.footer * {
+  color: #ffffff !important;
+}
+
+.site-footer a,
+.footer a,
+.site-footer .brand,
+.footer .brand,
+.site-footer .muted,
+.footer .muted,
+.site-footer .socials a,
+.footer .icons a,
+.footer-bottom {
+  color: #ffffff !important;
+  text-decoration: none;
+}
+
+.site-footer .muted,
+.footer .muted,
+.footer-bottom {
+  opacity: 0.82;
+}
+
+.footer .icons a,
+.site-footer .socials a {
+  border-color: rgba(255, 255, 255, 0.45) !important;
+}
+
+.site-footer a:hover,
+.footer a:hover,
+.site-footer .socials a:hover,
+.footer .icons a:hover {
+  color: #dbeafe !important;
 }

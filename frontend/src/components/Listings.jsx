@@ -2,6 +2,75 @@ import React, { useEffect, useState } from 'react'
 import './Landing.css'
 import formatMNT from '../utils/formatCurrency'
 
+
+const ACTIVE_BOOKING_STATUSES = new Set(['pending', 'approved', 'confirmed', 'paid'])
+
+function safeJsonArray(value){
+  if(Array.isArray(value)) return value
+  if(!value) return []
+  if(typeof value === 'string'){
+    try{
+      const parsed = JSON.parse(value)
+      return Array.isArray(parsed) ? parsed : []
+    }catch(e){
+      return value.split(',').map(x => x.trim()).filter(Boolean)
+    }
+  }
+  return []
+}
+
+function normalizeGer(item){
+  const images = safeJsonArray(item.images)
+  const amenities = safeJsonArray(item.amenities || item.features)
+  return {
+    ...item,
+    id: item.id || item._id,
+    title: item.title || item.name || 'Гэр',
+    location: item.location || 'Гэр',
+    pricePerNight: Number(item.pricePerNight || item.price || 0),
+    capacity: item.capacity || item.people || '',
+    description: item.description || '',
+    amenities,
+    images,
+  }
+}
+
+function amenitiesToInput(value){
+  const arr = safeJsonArray(value)
+  if(arr.length > 0) return arr.join(', ')
+  if(typeof value === 'string') return value
+  return ''
+}
+
+function parseAmenitiesInput(value){
+  if(Array.isArray(value)) return value.map(x => String(x).trim()).filter(Boolean)
+  return String(value || '')
+    .split(',')
+    .map(x => x.trim())
+    .filter(Boolean)
+}
+
+function bookingIsActive(booking){
+  const status = String(booking?.status || 'pending').toLowerCase()
+  return ACTIVE_BOOKING_STATUSES.has(status)
+}
+
+function eachDateBetween(startIso, endIso){
+  if(!startIso || !endIso) return []
+  const start = new Date(startIso)
+  const end = new Date(endIso)
+  if(Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return []
+  const dates = []
+  for(
+    let cur = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate()));
+    cur < end;
+    cur = new Date(Date.UTC(cur.getUTCFullYear(), cur.getUTCMonth(), cur.getUTCDate() + 1))
+  ){
+    dates.push(cur.toISOString().slice(0,10))
+  }
+  return dates
+}
+
 // Simple calendar rendering helper
 function Calendar({ year, month, disabledDays = [], onSelectDay = () => {}, selectedIsos = [] }){
   // month: 0-based
@@ -42,7 +111,12 @@ function Calendar({ year, month, disabledDays = [], onSelectDay = () => {}, sele
                 onKeyDown={(e) => { if(c && (e.key === 'Enter' || e.key === ' ')) onSelectDay(c.iso) }}
                 title={c ? `${c.iso}${c.disabled ? ' (Захиалсан)' : ''}` : undefined}
               >
-                {c ? c.day : ''}
+                {c ? (
+                  <div style={{display:'flex',flexDirection:'column',alignItems:'center',lineHeight:1.1}}>
+                    <span>{c.day}</span>
+                    {c.disabled && <small style={{fontSize:10,marginTop:3}}>Захиалгатай</small>}
+                  </div>
+                ) : ''}
               </td>
             ))}
           </tr>
@@ -66,22 +140,59 @@ export default function Listings(){
   // modal state for showing detailed overlay for an item
   const [modalOpen, setModalOpen] = useState(false)
   const [modalItem, setModalItem] = useState(null)
-  const [modalForm, setModalForm] = useState({ images: [], description: '', amenities: '' })
+  const [modalForm, setModalForm] = useState({
+    title: '',
+    location: '',
+    pricePerNight: '',
+    capacity: '',
+    images: [],
+    description: '',
+    amenities: ''
+  })
   const [modalImageInput, setModalImageInput] = useState('')
   const [modalMainImageIdx, setModalMainImageIdx] = useState(0)
   const [modalTab, setModalTab] = useState('view') // 'view' or 'edit' (admin only)
+  const [addGerOpen, setAddGerOpen] = useState(false)
+  const [addGerLoading, setAddGerLoading] = useState(false)
+  const [addGerMessage, setAddGerMessage] = useState('')
+  const [deletingGerId, setDeletingGerId] = useState(null)
+  const [newGerImages, setNewGerImages] = useState([])
+  const [newGerForm, setNewGerForm] = useState({
+    title: '',
+    location: '',
+    description: '',
+    pricePerNight: '',
+    capacity: '',
+    amenities: '',
+    imageUrl: ''
+  })
 
   function handleModalFileUpload(files){
+    // read files as base64 and persist to modalForm; when admin and editing a real ger
+    // also attempt to persist the images to the backend automatically so other
+    // users see them without needing to explicitly press Save.
     const list = Array.from(files || [])
     if(list.length === 0) return
-    list.forEach(f => {
-      const reader = new FileReader()
-      reader.onload = (ev) => {
-        const data = ev.target.result
-        setModalForm(prev => ({ ...prev, images: [...(prev.images||[]), data] }))
-      }
-      reader.readAsDataURL(f)
-    })
+    ;(async () => {
+      try{
+        const loaded = []
+        for(const f of list){
+          const data = await new Promise((resolve, reject) => {
+            const reader = new FileReader()
+            reader.onload = (ev) => resolve(ev.target.result)
+            reader.onerror = (err) => reject(err)
+            reader.readAsDataURL(f)
+          })
+          loaded.push(data)
+        }
+        setModalForm(prev => {
+          const imgs = [...(prev.images||[]), ...loaded]
+          // async persist to server if admin and editing a real ger
+          try{ if(isAdmin() && modalItem && !modalItem.isSample){ persistToServer(modalItem, { ...prev, images: imgs }, false) } }catch(e){}
+          return { ...prev, images: imgs }
+        })
+      }catch(e){ console.error('File read failed', e) }
+    })()
   }
 
   function isAdmin(){
@@ -91,6 +202,130 @@ export default function Listings(){
     }catch(e){ return false }
   }
 
+  function handleNewGerChange(e){
+    const { name, value } = e.target
+    setNewGerForm(prev => ({ ...prev, [name]: value }))
+  }
+
+  async function filesToDataUrls(files){
+    const list = Array.from(files || [])
+    const loaded = []
+
+    for(const file of list){
+      const dataUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = ev => resolve(ev.target.result)
+        reader.onerror = err => reject(err)
+        reader.readAsDataURL(file)
+      })
+      loaded.push(dataUrl)
+    }
+
+    return loaded
+  }
+
+  async function handleNewGerFileUpload(e){
+    try{
+      const loaded = await filesToDataUrls(e.target.files)
+      if(loaded.length > 0){
+        setNewGerImages(prev => [...prev, ...loaded])
+      }
+    }catch(err){
+      console.error(err)
+      setAddGerMessage('Зураг уншихад алдаа гарлаа')
+    }finally{
+      try{ e.target.value = '' }catch(err){}
+    }
+  }
+
+  function handleNewGerImageUrlAdd(){
+    const url = (newGerForm.imageUrl || '').trim()
+    if(!url) return
+
+    setNewGerImages(prev => [...prev, url])
+    setNewGerForm(prev => ({ ...prev, imageUrl: '' }))
+  }
+
+  function removeNewGerImage(index){
+    setNewGerImages(prev => prev.filter((_, i) => i !== index))
+  }
+
+  async function handleCreateGer(e){
+    e.preventDefault()
+    setAddGerMessage('')
+
+    if(!isAdmin()){
+      setAddGerMessage('Зөвхөн admin гэр нэмэх боломжтой')
+      return
+    }
+
+    const title = (newGerForm.title || '').trim()
+    const location = (newGerForm.location || '').trim()
+    const pricePerNight = Number(newGerForm.pricePerNight)
+    const capacity = Number(newGerForm.capacity)
+
+    if(!title || !location || !pricePerNight || !capacity){
+      setAddGerMessage('Нэр, байршил, үнэ, багтаамжийг заавал бөглөнө үү')
+      return
+    }
+
+    setAddGerLoading(true)
+
+    try{
+      const token = localStorage.getItem('token')
+      if(!token){
+        setAddGerMessage('Admin token олдсонгүй. Дахин нэвтэрнэ үү')
+        return
+      }
+
+      const amenities = (newGerForm.amenities || '')
+        .split(',')
+        .map(x => x.trim())
+        .filter(Boolean)
+
+      const body = {
+        title,
+        location,
+        description: newGerForm.description || '',
+        pricePerNight,
+        capacity,
+        amenities,
+        images: newGerImages
+      }
+
+      const res = await fetch('/api/gers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(body)
+      })
+
+      const text = await res.text()
+      let data = {}
+      try{ data = text ? JSON.parse(text) : {} }catch(err){
+        throw new Error(`Backend JSON биш response буцаалаа: ${text.slice(0, 100)}`)
+      }
+
+      if(!res.ok){
+        setAddGerMessage(data.message || 'Гэр нэмэхэд алдаа гарлаа')
+        return
+      }
+
+      const created = normalizeGer(data)
+      setGers(prev => [created, ...(Array.isArray(prev) ? prev : [])])
+      setNewGerForm({ title:'', location:'', description:'', pricePerNight:'', capacity:'', amenities:'', imageUrl:'' })
+      setNewGerImages([])
+      setAddGerMessage('Гэр амжилттай нэмэгдлээ')
+    }catch(err){
+      console.error(err)
+      setAddGerMessage(err.message || 'Сүлжээ эсвэл серверийн алдаа')
+    }finally{
+      setAddGerLoading(false)
+    }
+  }
+
   function handleModalInputChange(field, value){
     setModalForm(prev => ({ ...prev, [field]: value }))
   }
@@ -98,7 +333,11 @@ export default function Listings(){
   function handleModalImageAdd(){
     const url = (modalImageInput || '').trim()
     if(!url) return
-    setModalForm(prev => ({ ...prev, images: [...(prev.images||[]), url] }))
+    setModalForm(prev => {
+      const imgs = [...(prev.images||[]), url]
+      try{ if(isAdmin() && modalItem && !modalItem.isSample){ persistToServer(modalItem, { ...prev, images: imgs }, false) } }catch(e){}
+      return ({ ...prev, images: imgs })
+    })
     setModalImageInput('')
   }
 
@@ -108,108 +347,178 @@ export default function Listings(){
 
   function saveModalDetails(){
     if(!modalItem) return
+    ;(async () => {
+      try{
+        if(isAdmin()){
+          const ok = await persistToServer(modalItem, modalForm, true)
+          if(!ok) return
+        } else {
+          setModalItem(prev => prev ? ({
+            ...prev,
+            ...modalForm,
+            images: modalForm.images || []
+          }) : prev)
+        }
+
+      }catch(e){
+        console.error(e)
+        alert('Save failed: ' + e.message)
+      }
+    })()
+  }
+
+  // Persist changes to backend for a given ger and modal form-like state.
+  async function persistToServer(item, formState, showAlert = true){
+    if(!item) return false;
     try{
-      const raw = localStorage.getItem('localListingDetails')
-      const map = raw ? JSON.parse(raw) : {}
-      map[modalItem.id] = { images: modalForm.images || [], description: modalForm.description || '', amenities: modalForm.amenities || '' }
-      localStorage.setItem('localListingDetails', JSON.stringify(map))
-      // reflect changes on modalItem for immediate UI feedback
-      setModalItem(prev => prev ? ({ ...prev, images: map[modalItem.id].images, description: map[modalItem.id].description, amenities: map[modalItem.id].amenities }) : prev)
-      // also update global sampleItems if needed (not necessary for sample items here)
-      alert('Деталүүд хадгалагдлаа')
+      const token = localStorage.getItem('token')
+      if(!token){
+        if(showAlert) try{ alert('Admin token олдсонгүй. Дахин нэвтэрнэ үү') }catch(e){}
+        return false
+      }
+
+      const title = String(formState.title ?? item.title ?? '').trim()
+      const location = String(formState.location ?? item.location ?? '').trim()
+      const pricePerNight = Number(formState.pricePerNight ?? item.pricePerNight ?? 0)
+      const capacity = Number(formState.capacity ?? item.capacity ?? 0)
+
+      if(!title || !location || !Number.isFinite(pricePerNight) || pricePerNight <= 0 || !Number.isFinite(capacity) || capacity <= 0){
+        if(showAlert) try{ alert('Нэр, байршил, үнэ, багтаамж зөв бөглөнө үү') }catch(e){}
+        return false
+      }
+
+      const body = {
+        title,
+        location,
+        description: formState.description || item.description || null,
+        pricePerNight,
+        capacity,
+        amenities: parseAmenitiesInput(formState.amenities ?? item.amenities),
+        images: formState.images || item.images || []
+      }
+
+      const targetIsSample = !!item.isSample
+      const url = targetIsSample ? '/api/gers' : `/api/gers/${item.id}`
+      const method = targetIsSample ? 'POST' : 'PUT'
+
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify(body)
+      })
+      const data = await res.json()
+      if(res.ok){
+        const normalized = normalizeGer(data)
+        setModalItem(normalized)
+        setModalForm(prev => ({
+          ...prev,
+          title: normalized.title || '',
+          location: normalized.location || '',
+          pricePerNight: normalized.pricePerNight ?? '',
+          capacity: normalized.capacity ?? '',
+          description: normalized.description || '',
+          amenities: amenitiesToInput(normalized.amenities),
+          images: Array.isArray(normalized.images) ? normalized.images : []
+        }))
+
+        setGers(prev => {
+          if(!Array.isArray(prev)) return [normalized]
+          if(targetIsSample) return [normalized, ...prev]
+          return prev.map(g => (String(g.id) === String(normalized.id) ? normalized : g))
+        })
+
+        if(showAlert) try{ alert(targetIsSample ? 'Шинээр үүслээ' : 'Амжилттай шинэчлэгдлээ') }catch(e){}
+        return true
+      } else {
+        if(showAlert) try{ alert('Server save failed: ' + (data && data.message ? data.message : JSON.stringify(data))) }catch(e){}
+        return false
+      }
     }catch(e){
-      console.error(e)
+      console.error('persistToServer failed', e)
+      if(showAlert) try{ alert('Save failed: ' + e.message) }catch(e){}
+      return false
     }
   }
 
-  const sampleItems = []
-  for(let i=1;i<=5;i++) sampleItems.push({ id:`sample-ger-${i}`, title:`Цомцог гэр ${i}`, location:'Гэр', pricePerNight:250000, isSample:true })
-  for(let i=1;i<=5;i++) sampleItems.push({ id:`sample-house-${i}`, title:`Бөмбөгөр сууц ${i}`, location:'Гэр', pricePerNight:250000, isSample:true })
-
-  function generateSampleBookedDays(count=3){
-    const out = []
-    const t = new Date()
-    for(let i=0;i<count;i++){
-      // use UTC-based date construction to avoid timezone shifts
-      const d = new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth(), t.getUTCDate() + i))
-      out.push(d.toISOString().slice(0,10))
-    }
-    return out
-  }
 
   useEffect(() => {
     async function load(){
-      try{
-        const res = await fetch('/api/gers')
-        const data = await res.json()
-        setGers(data)
-        // do not auto-select — allow user to check items
-      }catch(err){
+    try{
+      const res = await fetch('/api/gers')
+      const data = await res.json()
+      // Defensive: ensure images/amenities are arrays on the client too
+      const normalized = Array.isArray(data) ? data.map(normalizeGer) : []
+      setGers(normalized)
+      // do not auto-select — allow user to check items
+    }catch(err){
         console.error(err)
       }
     }
     load()
   }, [])
 
-  // load bookings for a given item id (sample items get synthetic bookings)
+  // Add a refresh effect to periodically fetch the latest data from the backend
+  useEffect(() => {
+    // Only refresh data periodically if admin is logged in
+    if (!isAdmin()) return;
+    
+    const refreshInterval = setInterval(async () => {
+      try {
+        const res = await fetch('/api/gers');
+        if (!res.ok) return;
+        
+        const data = await res.json();
+        // Normalize the data
+        const normalized = Array.isArray(data) ? data.map(normalizeGer) : [];
+        
+        setGers(normalized);
+      } catch (e) {
+        console.error('Failed to refresh gers data', e);
+      }
+    }, 30000); // Refresh every 30 seconds
+    
+    return () => clearInterval(refreshInterval);
+  }, []);
+
+  // load bookings for a given item id from the shared backend/database
   async function loadBookingsFor(item){
     try{
-      if(item.isSample){
-        // prefer any client-side sample bookings stored in localStorage
-        const local = JSON.parse(localStorage.getItem('sampleBookings') || '[]')
-        const forItem = local.filter(b => b.gerId === item.id)
-        if(forItem.length > 0){
-          const taken = []
-          forItem.forEach(b => {
-            const start = new Date(b.checkInDate)
-            const end = new Date(b.checkOutDate)
-            // iterate days in UTC to produce stable yyyy-mm-dd strings
-            for(let cur = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate())); cur < end; cur = new Date(Date.UTC(cur.getUTCFullYear(), cur.getUTCMonth(), cur.getUTCDate() + 1))){
-              taken.push(cur.toISOString().slice(0,10))
-            }
-          })
-          setBookedDaysMap(prev => ({ ...prev, [item.id]: Array.from(new Set([...(prev[item.id]||[]), ...taken])) }))
-          return
-        }
-        // No server bookings for sample items and no client-side sample bookings exist.
-        // Do not inject synthetic bookings by default — keep sample items free until user creates local bookings.
-        setBookedDaysMap(prev => ({ ...prev, [item.id]: [] }))
+      if(!item || item.isSample){
+        setBookedDaysMap(prev => ({ ...prev, [item?.id || 'sample']: [] }))
         return
       }
+
       const res = await fetch(`/api/gers/${item.id}/bookings`)
-      const data = await res.json()
+      const data = await res.json().catch(() => [])
+      if(!res.ok) throw new Error(data.message || 'Bookings fetch failed')
+
       const taken = []
-      data.forEach(b => {
-        const start = new Date(b.checkInDate)
-        const end = new Date(b.checkOutDate)
-        for(let cur = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate())); cur < end; cur = new Date(Date.UTC(cur.getUTCFullYear(), cur.getUTCMonth(), cur.getUTCDate() + 1))){
-          taken.push(cur.toISOString().slice(0,10))
-        }
+      ;(Array.isArray(data) ? data : []).forEach(b => {
+        if(!bookingIsActive(b)) return
+        taken.push(...eachDateBetween(b.checkInDate || b.check_in_date || b.startDate, b.checkOutDate || b.check_out_date || b.endDate))
       })
-      setBookedDaysMap(prev => ({ ...prev, [item.id]: taken }))
+      setBookedDaysMap(prev => ({ ...prev, [item.id]: Array.from(new Set(taken)) }))
     }catch(err){
       console.error(err)
-      setBookedDaysMap(prev => ({ ...prev, [item.id]: [] }))
+      setBookedDaysMap(prev => ({ ...prev, [item?.id]: [] }))
     }
   }
 
   // modal control helpers
-  function openModal(item){
+  function openModal(item, initialTab = 'view'){
     setModalItem(item)
     setModalOpen(true)
-    // populate modal form from item or from local storage overrides
-    try{
-      const raw = localStorage.getItem('localListingDetails')
-      const map = raw ? JSON.parse(raw) : {}
-      const local = map[item.id] || {}
-      setModalForm({
-        images: Array.isArray(local.images) ? local.images : (Array.isArray(item.images) ? item.images : (item.image ? [item.image] : [])),
-        description: local.description || item.description || '',
-        amenities: local.amenities || item.amenities || ''
-      })
-    }catch(e){
-      setModalForm({ images: Array.isArray(item.images) ? item.images : (item.image ? [item.image] : []), description: item.description || '', amenities: item.amenities || '' })
-    }
+    setModalTab(initialTab)
+    // Always use the data from the item directly, not from localStorage
+    setModalForm({ 
+      title: item.title || '',
+      location: item.location || '',
+      pricePerNight: item.pricePerNight ?? '',
+      capacity: item.capacity ?? '',
+      images: Array.isArray(item.images) ? item.images : (item.image ? [item.image] : []), 
+      description: item.description || '', 
+      amenities: amenitiesToInput(item.amenities)
+    })
     // reset selected main image index when opening
     setModalMainImageIdx(0)
     // ensure view state and bookings are loaded for the modal calendar
@@ -219,6 +528,60 @@ export default function Listings(){
   function closeModal(){
     setModalOpen(false)
     setModalItem(null)
+  }
+
+  async function handleDeleteGer(item){
+    if(!item?.id) return
+
+    if(!isAdmin()){
+      alert('Зөвхөн admin устгах боломжтой')
+      return
+    }
+
+    if(item.isSample){
+      alert('Туршилтын item устгах боломжгүй')
+      return
+    }
+
+    const confirmed = window.confirm(`"${item.title}" гэрийг устгах уу?`)
+    if(!confirmed) return
+
+    const token = localStorage.getItem('token')
+    if(!token){
+      alert('Admin token олдсонгүй. Дахин нэвтэрнэ үү')
+      return
+    }
+
+    setDeletingGerId(item.id)
+    try{
+      const res = await fetch(`/api/gers/${item.id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      })
+
+      const data = await res.json().catch(() => ({}))
+      if(!res.ok){
+        alert(data.message || 'Гэр устгахад алдаа гарлаа')
+        return
+      }
+
+      setGers(prev => Array.isArray(prev) ? prev.filter(g => String(g.id) !== String(item.id)) : prev)
+      setSelectedItems(prev => prev.filter(s => String(s.id) !== String(item.id)))
+      setSelectedDatesMap(prev => { const next = { ...prev }; delete next[item.id]; return next })
+      setBookedDaysMap(prev => { const next = { ...prev }; delete next[item.id]; return next })
+      setViewMap(prev => { const next = { ...prev }; delete next[item.id]; return next })
+
+      if(modalItem && String(modalItem.id) === String(item.id)){
+        closeModal()
+      }
+
+      setMessage(`"${item.title}" гэр устгагдлаа`)
+    }catch(err){
+      console.error(err)
+      alert('Сүлжээ эсвэл серверийн алдаа')
+    }finally{
+      setDeletingGerId(null)
+    }
   }
 
   // close modal on Escape
@@ -307,13 +670,7 @@ export default function Listings(){
   const LISTINGS_GALLERY_STORAGE_KEY = 'listingsEmptyGalleryImages'
 
   function getItemPreviewImage(item, idx = 0){
-    // Prefer any locally-saved admin images stored under localListingDetails
-    try{
-      const raw = localStorage.getItem('localListingDetails')
-      const map = raw ? JSON.parse(raw) : {}
-      const local = map[item?.id]
-      if(local && Array.isArray(local.images) && local.images.length > 0) return local.images[0]
-    }catch(e){}
+    // Always use the images from the item directly, not from localStorage
     if(Array.isArray(item?.images) && item.images.length > 0) return item.images[0]
     if(item?.image) return item.image
     if(Array.isArray(emptyGalleryImages) && emptyGalleryImages.length > 0){
@@ -352,72 +709,38 @@ export default function Listings(){
     setLoading(true)
     try{
       const token = localStorage.getItem('token')
-      if(!token){ setMessage('You must be signed in to book listings'); setLoading(false); return }
+      if(!token){
+        setMessage('Захиалга хийхийн тулд эхлээд нэвтэрнэ үү')
+        return
+      }
 
       const results = []
       for(const item of selectedItems){
         const sel = (selectedDatesMap[item.id] || []).slice().sort()
         if(sel.length === 0) continue
+
+
         const ranges = datesToRanges(sel)
-        if(item.isSample){
-          // Create local (client-side) bookings for sample items so users can see them in dashboard
-          const msPerDay = 1000 * 60 * 60 * 24
-          const existing = JSON.parse(localStorage.getItem('sampleBookings') || '[]')
-          for(const r of ranges){
-            const nights = Math.ceil((new Date(r.end) - new Date(r.start)) / msPerDay)
-            const nowIso = new Date().toISOString()
-            const booking = {
-              id: `local-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,
-              userId: (() => { try { return JSON.parse(localStorage.getItem('user'))?.id } catch { return null } })(),
-              gerId: item.id,
-              checkInDate: r.start,
-              checkOutDate: r.end,
-              totalPrice: nights * (item.pricePerNight || 0),
-              status: 'confirmed',
-              createdAt: nowIso,
-              updatedAt: nowIso,
-              ger_title: item.title,
-              ger_location: item.location
-            }
-            existing.push(booking)
-            results.push({ item, ok:true, booking })
-            // expand bookedDaysMap for immediate UI feedback
-            const start = new Date(r.start)
-            const end = new Date(r.end)
-            const taken = []
-            for(let cur = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate())); cur < end; cur = new Date(Date.UTC(cur.getUTCFullYear(), cur.getUTCMonth(), cur.getUTCDate() + 1))){
-              taken.push(cur.toISOString().slice(0,10))
-            }
-            setBookedDaysMap(prev => ({ ...prev, [item.id]: Array.from(new Set([...(prev[item.id]||[]), ...taken])) }))
-            // clear selected dates for this item
-            setSelectedDatesMap(prev => ({ ...prev, [item.id]: [] }))
-          }
-          localStorage.setItem('sampleBookings', JSON.stringify(existing))
-          continue
-        }
         for(const r of ranges){
           const res = await fetch('/api/bookings', {
             method: 'POST',
             headers: {
               'Content-Type':'application/json',
-              'Authorization': `Bearer ${token}`
+              Authorization: `Bearer ${token}`
             },
-            body: JSON.stringify({ gerId: item.id, checkInDate: r.start, checkOutDate: r.end })
+            body: JSON.stringify({
+              gerId: item.id,
+              checkInDate: r.start,
+              checkOutDate: r.end
+            })
           })
-          const data = await res.json()
+          const data = await res.json().catch(() => ({}))
           if(!res.ok){
-            results.push({ item, ok:false, message: data.message || 'Booking failed' })
+            results.push({ item, ok:false, message: data.message || 'Захиалга амжилтгүй боллоо' })
           } else {
             results.push({ item, ok:true, booking: data })
-            // expand bookedDaysMap for immediate UI feedback
-            const start = new Date(r.start)
-            const end = new Date(r.end)
-            const taken = []
-            for(let cur = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate())); cur < end; cur = new Date(Date.UTC(cur.getUTCFullYear(), cur.getUTCMonth(), cur.getUTCDate() + 1))){
-              taken.push(cur.toISOString().slice(0,10))
-            }
+            const taken = eachDateBetween(r.start, r.end)
             setBookedDaysMap(prev => ({ ...prev, [item.id]: Array.from(new Set([...(prev[item.id]||[]), ...taken])) }))
-            // clear selected dates for this item
             setSelectedDatesMap(prev => ({ ...prev, [item.id]: [] }))
           }
         }
@@ -427,14 +750,14 @@ export default function Listings(){
       if(failed.length > 0){
         setMessage(failed.map(f => `${f.item.title}: ${f.message}`).join('; '))
       } else if(results.length === 0){
-        setMessage('No dates selected to book')
+        setMessage('Захиалах өдөр сонгоогүй байна')
       } else {
-        setMessage('Booking(s) confirmed! Redirecting to your bookings...')
-        setTimeout(() => window.location.href = '/booked', 800)
+        setMessage('Захиалга амжилттай илгээгдлээ. Таны захиалгууд руу шилжүүлж байна...')
+        setTimeout(() => window.location.href = '/booked?success=1', 800)
       }
     }catch(err){
       console.error(err)
-      setMessage('Network or server error')
+      setMessage('Сүлжээ эсвэл серверийн алдаа')
     }finally{
       setLoading(false)
     }
@@ -465,50 +788,238 @@ export default function Listings(){
     return () => { mounted = false }
   }, [])
 
+  const blockedListingTitles = new Set([
+    'terelj ger',
+    'gobi desert ger',
+    'цомцог гэр 1',
+    'цомцог гэр 2'
+  ])
+
+  const normalizeListingTitle = (value = '') => String(value)
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  const displayItems = gers.filter(item => {
+    const title = normalizeListingTitle(item?.title || item?.name || '')
+    return !blockedListingTitles.has(title)
+  })
+
   return (
     <div className="container">
       <h2>Байр сонгох</h2>
+      {isAdmin() && (
+        <div style={{border:'1px solid #e5e7eb',borderRadius:12,padding:14,margin:'12px 0 18px',background:'#fff'}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:12,flexWrap:'wrap'}}>
+            <div>
+              <h3 style={{margin:'0 0 4px'}}>Гэр нэмэх</h3>
+              <p style={{margin:0,color:'#6b7280'}}></p>
+            </div>
+            <button type="button" className="btn" onClick={() => setAddGerOpen(v => !v)}>
+              {addGerOpen ? 'Хаах' : 'Гэр нэмэх'}
+            </button>
+          </div>
+
+          {addGerOpen && (
+            <form onSubmit={handleCreateGer} style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginTop:14}}>
+              <div>
+                <label style={{display:'block',fontWeight:600,marginBottom:6}}>Гэрийн нэр</label>
+                <input
+                  name="title"
+                  value={newGerForm.title}
+                  onChange={handleNewGerChange}
+                  placeholder="Жишээ: Цомцог гэр 1"
+                  required
+                  style={{width:'100%',padding:10,borderRadius:8,border:'1px solid #e5e7eb'}}
+                />
+              </div>
+
+              <div>
+                <label style={{display:'block',fontWeight:600,marginBottom:6}}>Байршил</label>
+                <input
+                  name="location"
+                  value={newGerForm.location}
+                  onChange={handleNewGerChange}
+                  placeholder="Жишээ: Terelj"
+                  required
+                  style={{width:'100%',padding:10,borderRadius:8,border:'1px solid #e5e7eb'}}
+                />
+              </div>
+
+              <div>
+                <label style={{display:'block',fontWeight:600,marginBottom:6}}>Үнэ</label>
+                <input
+                  name="pricePerNight"
+                  type="number"
+                  min="0"
+                  value={newGerForm.pricePerNight}
+                  onChange={handleNewGerChange}
+                  placeholder="250000"
+                  required
+                  style={{width:'100%',padding:10,borderRadius:8,border:'1px solid #e5e7eb'}}
+                />
+              </div>
+
+              <div>
+                <label style={{display:'block',fontWeight:600,marginBottom:6}}>Багтаамж</label>
+                <input
+                  name="capacity"
+                  type="number"
+                  min="1"
+                  value={newGerForm.capacity}
+                  onChange={handleNewGerChange}
+                  placeholder="2"
+                  required
+                  style={{width:'100%',padding:10,borderRadius:8,border:'1px solid #e5e7eb'}}
+                />
+              </div>
+
+              <div style={{gridColumn:'1 / span 2'}}>
+                <label style={{display:'block',fontWeight:600,marginBottom:6}}>Танилцуулга</label>
+                <textarea
+                  name="description"
+                  value={newGerForm.description}
+                  onChange={handleNewGerChange}
+                  placeholder="Гэрийн тайлбар..."
+                  style={{width:'100%',minHeight:90,padding:10,borderRadius:8,border:'1px solid #e5e7eb',color:'#000',background:'#fff'}}
+                />
+              </div>
+
+              <div style={{gridColumn:'1 / span 2'}}>
+                <label style={{display:'block',fontWeight:600,marginBottom:6}}>Тав тух / amenities</label>
+                <input
+                  name="amenities"
+                  value={newGerForm.amenities}
+                  onChange={handleNewGerChange}
+                  placeholder="heating, meals, wifi"
+                  style={{width:'100%',padding:10,borderRadius:8,border:'1px solid #e5e7eb'}}
+                />
+              </div>
+
+              <div style={{gridColumn:'1 / span 2'}}>
+                <label style={{display:'block',fontWeight:600,marginBottom:6}}>Зураг</label>
+                <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
+                  <input
+                    name="imageUrl"
+                    value={newGerForm.imageUrl}
+                    onChange={handleNewGerChange}
+                    placeholder="Зургийн URL"
+                    style={{flex:1,minWidth:220,padding:10,borderRadius:8,border:'1px solid #e5e7eb'}}
+                  />
+                  <button type="button" className="btn btn-outline" onClick={handleNewGerImageUrlAdd}>URL нэмэх</button>
+                  <input type="file" accept="image/*" multiple onChange={handleNewGerFileUpload} />
+                </div>
+
+                {newGerImages.length > 0 && (
+                  <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:10}}>
+                    {newGerImages.map((img, idx) => (
+                      <div key={`${img}-${idx}`} style={{position:'relative',width:100,height:70,border:'1px solid #e5e7eb',borderRadius:8,overflow:'hidden'}}>
+                        <img src={img} alt={`new-ger-${idx}`} style={{width:'100%',height:'100%',objectFit:'cover'}} />
+                        <button
+                          type="button"
+                          onClick={() => removeNewGerImage(idx)}
+                          style={{position:'absolute',top:4,right:4,border:'none',borderRadius:4,background:'rgba(0,0,0,.65)',color:'#fff',cursor:'pointer'}}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {addGerMessage && (
+                <div style={{gridColumn:'1 / span 2',color:addGerMessage.includes('амжилттай') ? '#047857' : '#dc2626'}}>
+                  {addGerMessage}
+                </div>
+              )}
+
+              <div style={{gridColumn:'1 / span 2',display:'flex',justifyContent:'flex-end'}}>
+                <button type="submit" className="btn btn-primary" disabled={addGerLoading} style={{background:'#000',border:'1px solid #000',color:'#fff'}}>
+                  {addGerLoading ? 'Хадгалж байна...' : 'Амжилттай хадгалагдлаа'}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      )}
+
       <div className="listings two-column">
         <div className="gers-list">
           <h4 style={{margin:'0 0 8px 0'}}></h4>
-          {sampleItems.map(g => {
+          {displayItems.map(g => {
             const checked = selectedItems.some(s => s.id === g.id)
+            const toggleSelection = () => {
+              if(checked){
+                setSelectedItems(prev => prev.filter(p => p.id !== g.id))
+                setSelectedDatesMap(prev => { const next = { ...prev }; delete next[g.id]; return next })
+                setBookedDaysMap(prev => { const next = { ...prev }; delete next[g.id]; return next })
+                setViewMap(prev => { const next = { ...prev }; delete next[g.id]; return next })
+              } else {
+                setSelectedItems(prev => [...prev, g])
+                setSelectedDatesMap(prev => ({ ...prev, [g.id]: [] }))
+                setViewMap(prev => ({ ...prev, [g.id]: { year: now.getFullYear(), month: now.getMonth() } }))
+                loadBookingsFor(g)
+              }
+            }
+
             return (
-              <label key={g.id} className={`listing small ${checked ? 'selected' : ''}`} style={{display:'flex',alignItems:'center',gap:12}}>
-                <input type="checkbox" checked={checked} onChange={() => {
-                  // toggle selection
-                  if(checked){
-                    setSelectedItems(prev => prev.filter(p => p.id !== g.id))
-                    setSelectedDatesMap(prev => { const next = { ...prev }; delete next[g.id]; return next })
-                    setBookedDaysMap(prev => { const next = { ...prev }; delete next[g.id]; return next })
-                    setViewMap(prev => { const next = { ...prev }; delete next[g.id]; return next })
-                  } else {
-                    setSelectedItems(prev => [...prev, g])
-                    setSelectedDatesMap(prev => ({ ...prev, [g.id]: [] }))
-                    setViewMap(prev => ({ ...prev, [g.id]: { year: now.getFullYear(), month: now.getMonth() } }))
-                    loadBookingsFor(g)
-                  }
-                }} />
-                <div className="listing-body" style={{flex:1}}>
-                  <h4 style={{margin:'0'}}>{g.title}</h4>
-                  <p style={{margin:'0'}}>{g.location} — {formatMNT(g.pricePerNight)} {g.isSample && <span style={{color:'#6b7280',marginLeft:8,fontSize:12}}></span>}</p>
-                </div>
-                <div style={{marginLeft:8}}>
+              <div key={g.id} className={`listing small listing-item ${checked ? 'selected' : ''}`}>
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={toggleSelection}
+                  aria-label={`${g.title} сонгох`}
+                />
+
+                <button
+                  type="button"
+                  className="listing-card-main"
+                  onClick={() => openModal(g)}
+                  aria-label={`${g.title} дэлгэрэнгүй`}
+                >
+                  <div className="listing-body">
+                    <h4>{g.title}</h4>
+                    <p>{g.location}</p>
+                    <p>{formatMNT(g.pricePerNight)}</p>
+                  </div>
+                </button>
+
+                <div style={{display:'flex',flexDirection:'column',gap:6,alignItems:'flex-end'}}>
                   <button
-                    className="btn btn-outline"
-                    onClick={(e) => { e.preventDefault(); openModal(g) }}
-                    style={{padding:'6px 8px', background:'#000', color:'#fff', border:'1px solid #000'}}
-                    aria-label={`Дэлгэрэнгүй ${g.title}`}
+                    type="button"
+                    className="listing-detail-btn"
+                    onClick={() => openModal(g)}
                   >
                     дэлгэрэнгүй
                   </button>
+
+                  {isAdmin() && (
+                    <div style={{display:'flex',gap:6}}>
+                      <button
+                        type="button"
+                        onClick={() => openModal(g, 'manage')}
+                        style={{border:'1px solid #111827',background:'#fff',color:'#111827',borderRadius:999,padding:'5px 10px',fontSize:12,fontWeight:700,cursor:'pointer'}}
+                      >
+                        засах
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteGer(g)}
+                        disabled={deletingGerId === g.id}
+                        style={{border:'1px solid #dc2626',background:'#dc2626',color:'#fff',borderRadius:999,padding:'5px 10px',fontSize:12,fontWeight:700,cursor: deletingGerId === g.id ? 'not-allowed' : 'pointer',opacity: deletingGerId === g.id ? 0.65 : 1}}
+                      >
+                        {deletingGerId === g.id ? 'устгаж байна...' : 'устгах'}
+                      </button>
+                    </div>
+                  )}
                 </div>
-              </label>
+              </div>
             )
           })}
 
           {/* Removed extra "Нэмэлт (VIP)" section per request */}
-          {gers.length === 0 && <p>Одоогоор бодит жагсаалт алга байна.</p>}
+          {gers.length === 0 && <p>Одоогоор жагсаалт алга байна.</p>}
         </div>
 
         <div className="gers-detail">
@@ -530,10 +1041,7 @@ export default function Listings(){
                             <div style={{color:'#6b7280',fontSize:13}}>{item.location} — {formatMNT(item.pricePerNight)} / шөнө</div>
                           </div>
                             <div style={{textAlign:'right'}}>
-                            <div style={{fontSize:12,color:'#6b7280'}}>Сонгосон: {sel.length}</div>
-                            <div style={{marginTop:6}}>
-                              <button className="btn btn-outline" onClick={() => openModal(item)} aria-label={`Дэлгэрэнгүй ${item.title}`} style={{background:'#000',color:'#fff',border:'1px solid #000'}}>дэлгэрэнгүй</button>
-                            </div>
+                              <div style={{fontSize:12,color:'#6b7280'}}>Сонгосон: {sel.length}</div>
                             </div>
                         </div>
 
@@ -554,7 +1062,7 @@ export default function Listings(){
                             />
                           ) : (
                             <div className="empty-state-image-placeholder" style={{maxWidth:320,height:180,display:'flex',alignItems:'center',justifyContent:'center'}}>
-                              Сууцны зураг харагдах хэсэг
+                              Гэрийн зураг харагдах хэсэг
                               
                             </div>
                           )}
@@ -684,6 +1192,20 @@ export default function Listings(){
                               ) : (
                                 <>
                                   <div style={{marginBottom:12}}>
+                                    <strong>Гэрийн нэр (Засварлах)</strong>
+                                    <input value={modalForm.title} onChange={(e)=>handleModalInputChange('title', e.target.value)} placeholder="Гэрийн нэр" style={{width:'100%',marginTop:6,padding:8}} />
+                                  </div>
+                                  <div style={{marginBottom:12,display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+                                    <div>
+                                      <strong>Үнэ / шөнө</strong>
+                                      <input type="number" min="0" value={modalForm.pricePerNight} onChange={(e)=>handleModalInputChange('pricePerNight', e.target.value)} placeholder="Үнэ" style={{width:'100%',marginTop:6,padding:8}} />
+                                    </div>
+                                    <div>
+                                      <strong>Багтаамж</strong>
+                                      <input type="number" min="1" value={modalForm.capacity} onChange={(e)=>handleModalInputChange('capacity', e.target.value)} placeholder="Багтаамж" style={{width:'100%',marginTop:6,padding:8}} />
+                                    </div>
+                                  </div>
+                                  <div style={{marginBottom:12}}>
                                     <strong>Танилцуулга (Засварлах)</strong>
                                     <textarea value={modalForm.description} onChange={(e)=>handleModalInputChange('description', e.target.value)} placeholder="Танилцуулга оруулна уу" style={{width:'100%',minHeight:80,marginTop:6,padding:8}} />
                                   </div>
@@ -707,7 +1229,7 @@ export default function Listings(){
                                     </div>
                                     <div style={{marginTop:8}}>
                                       <input type="file" accept="image/*" multiple onChange={(e)=>handleModalFileUpload(e.target.files)} />
-                                      <div style={{color:'#6b7280',fontSize:12,marginTop:6}}>Файлыг оруулах үед зураг нь base64 болгон хадгалагдана (туршилтын функц). Backend руу upload хийхийг хүсвэл мэдэгдэнэ үү.</div>
+                                      <div style={{color:'#6b7280',fontSize:12,marginTop:6}}></div>
                                     </div>
                                   </div>
                                   <div style={{marginTop:6}}>
@@ -744,7 +1266,7 @@ export default function Listings(){
                       </div>
                       <div style={{display:'flex',justifyContent:'flex-end',marginTop:16,gap:8}}>
                         <button className="btn" onClick={closeModal}>Хаах</button>
-                        <button className="btn btn-primary" onClick={() => { /* optionally handle direct booking */ window.location.href = `/book?items=${encodeURIComponent(modalItem.id + ':' + (selectedDatesMap[modalItem.id]||[]).join(','))}` }}>Захиалах</button>
+                        <button className="btn btn-primary" onClick={() => { closeModal(); setMessage('Календар дээр өдрөө сонгоод доорх “Захиалга баталгаажуулах” товчийг дарна уу.') }}>Захиалах</button>
                       </div>
                     </div>
                   </div>

@@ -210,14 +210,14 @@ export default function Landing(){
       <footer className="footer">
         <div className="container footer-inner">
           <div className="col">
-            <h4>Mongol Ayalal</h4>
-            <p className="muted">Утас: +976 00 000000<br/>И-мэйл: info@mongolayalal.mn</p>
+            <h4>Khankh Tour</h4>
+            <p className="muted">Утас: +976 95699988<br/>И-мэйл: info@mongolayalal.mn</p>
           </div>
           <div className="col social">
             <h4>Бидэнтэй холбогдоно уу</h4>
             <div className="icons">
-              <a href="#" aria-label="facebook">FB</a>
-              <a href="#" aria-label="instagram">IG</a>
+              
+            
             </div>
           </div>
         </div>

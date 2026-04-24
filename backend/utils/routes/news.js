@@ -25,4 +25,21 @@ router.post('/', auth, adminOnly, (req, res) => {
   } catch (e) { console.error(e); res.status(500).json({ message: 'Server error' }) }
 })
 
+// Admin: delete news
+router.delete('/:id', auth, adminOnly, (req, res) => {
+  try {
+    const id = Number(req.params.id)
+    if (!Number.isFinite(id)) return res.status(400).json({ message: 'Invalid id' })
+
+    const db = getDb()
+    const info = db.prepare('DELETE FROM news WHERE id = ?').run(id)
+    if (!info?.changes) return res.status(404).json({ message: 'News not found' })
+
+    res.json({ ok: true, id })
+  } catch (e) {
+    console.error(e)
+    res.status(500).json({ message: 'Server error' })
+  }
+})
+
 module.exports = router

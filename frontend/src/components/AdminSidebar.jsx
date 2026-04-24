@@ -37,7 +37,7 @@ const AdminSidebar = () => {
 
       <div className="sidebar-footer">
         <a href="/" style={{ ...linkStyle, color: '#64748b' }}>
-          <IconHome /> Нүүр хуудас руу
+          <IconHome /> Нүүр хуудас руу шилжих
         </a>
         <button onClick={logout} style={{ 
           ...linkStyle, 

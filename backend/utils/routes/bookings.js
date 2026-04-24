@@ -34,6 +34,18 @@ router.post('/', auth, async (req, res) => {
       VALUES (?, ?, ?, ?, ?, 'confirmed', ?, ?)`).run(req.user.id, gerId, checkIn.toISOString(), checkOut.toISOString(), totalPrice, now, now);
     // debug log
     try { console.log('bookings POST insert info=', info); } catch (e) {}
+    // Attempt to force or inspect persistence (sql.js export) for debugging
+    try {
+      if (db && typeof db.export === 'function') {
+        try {
+          const exported = db.export();
+          const size = exported && (exported.byteLength || exported.length) ? (exported.byteLength || exported.length) : undefined;
+          try { console.log('db.export() available, exported size=', size); } catch (e) {}
+        } catch (e) { console.error('db.export() threw', e && e.message ? e.message : e); }
+      } else {
+        try { console.log('db.export() not available on wrapper (likely native driver)'); } catch (e) {}
+      }
+    } catch (e) { console.error('export check failed', e && e.message ? e.message : e); }
     let insertedId = info && info.lastInsertRowid;
     // fallback: try to read last_insert_rowid() from the underlying DB if wrapper didn't return it
     if (!insertedId) {

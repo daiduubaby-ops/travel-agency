@@ -21,22 +21,29 @@ const defaultPrograms = [
 ]
 
 export default function Programs(){
-  // load programs from backend if available, fallback to localStorage/default
-  const [programsState, setProgramsState] = React.useState(() => {
-    try{ const raw = localStorage.getItem('programs'); if(raw) return JSON.parse(raw) }catch(e){}
-    return defaultPrograms
-  })
+  // Always start with default programs, then load from backend
+  const [programsState, setProgramsState] = React.useState(defaultPrograms)
+  const [loading, setLoading] = React.useState(true)
 
   React.useEffect(() => {
     let mounted = true
     async function load(){
       try{
+        setLoading(true)
         const res = await fetch('/api/programs')
-        if(!res.ok) return
+        if(!res.ok) {
+          console.error('Failed to fetch programs from API:', res.status)
+          return
+        }
         const data = await res.json()
         if(!mounted) return
         setProgramsState(data)
-      }catch(e){/* ignore */}
+        // Don't save to localStorage anymore - always fetch from backend
+      }catch(e){
+        console.error('Error fetching programs:', e)
+      } finally {
+        if(mounted) setLoading(false)
+      }
     }
     load()
     return () => { mounted = false }
@@ -216,6 +223,22 @@ export default function Programs(){
               </div>
             ))}
           </div>
+
+          {/* Display Introduction/Description section */}
+          {program.description && (
+            <div style={{marginTop:20, marginBottom:20}}>
+              <h3 style={{fontSize:18, marginBottom:10}}>Танилцуулга</h3>
+              <div style={{lineHeight:1.6, color:'#374151'}}>{program.description}</div>
+            </div>
+          )}
+
+          {/* Display Amenities/Features section */}
+          {program.features && (
+            <div style={{marginTop:20, marginBottom:20}}>
+              <h3 style={{fontSize:18, marginBottom:10}}>Онцлог шинж чанарууд</h3>
+              <div style={{lineHeight:1.6, color:'#374151'}}>{program.features}</div>
+            </div>
+          )}
 
           <div style={{marginTop:20}}>
             {/* show a compact total price on the right similar to design */}

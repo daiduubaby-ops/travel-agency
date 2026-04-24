@@ -79,7 +79,7 @@ export default function Nav() {
           {user ? (
             <>
               <a href="/profile" className="profile-link" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
-                <img src={user.avatar || ''} alt={user.name || 'U'} onError={(e) => { e.target.onerror = null; e.target.src = '' }} style={{ width: 26, height: 26, borderRadius: 9999, background: '#f1f3f5', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: '#374151', objectFit: 'cover' }} />
+                <img src={user.avatar || ''} alt={user.name || 'U'} onError={(e) => { e.target.onerror = null; e.target.src = '' }} style={{ width: 26, height: 26, borderRadius: 9999, background: '#f1f3f5', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: '#9509d0', objectFit: 'cover' }} />
                 <span style={{ fontSize: 14, color: 'var(--text-dark,#0b1220)', fontWeight: 600 }}>{user.name}</span>
               </a>
               <button className="btn btn-ghost" onClick={handleLogout}>Гарах</button>

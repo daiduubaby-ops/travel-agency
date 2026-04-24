@@ -80,17 +80,6 @@ export default function AdminNews() {
     reader.readAsDataURL(file)
   }
 
-  // normalize image paths (same logic as News.getImgUrl)
-  function getImgUrl(img) {
-    if (!img) return ''
-    if (typeof img !== 'string') return ''
-    if (img.startsWith('http://') || img.startsWith('https://')) return img
-    if (img.startsWith('data:') || img.startsWith('blob:')) return img
-    if (img.startsWith('/public')) return img
-    if (img.startsWith('/')) return `/public${img}`
-    return `/public/${img}`
-  }
-
   function addNews(e) {
     e.preventDefault()
     if (!form.title.trim()) {
@@ -106,40 +95,15 @@ export default function AdminNews() {
       return
     }
     if (editingId) {
-      // attempt to update on server when admin token available
-      (async () => {
-        try {
-          const token = localStorage.getItem('token')
-          if (!token) throw new Error('Not authenticated')
-          const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
-          const res = await fetch(`/api/admin/news/${editingId}`, { method: 'PUT', headers, body: JSON.stringify({ title: form.title, img: form.img, date: form.date, desc: form.desc }) })
-          if (!res.ok) {
-            const errJson = await res.json().catch(()=>({}))
-            throw new Error(errJson.message || 'Server error')
-          }
-          const saved = await res.json().catch(()=>null)
-          const next = items.map((n) => (
-            n.id === editingId
-              ? (saved || { ...n, ...form, date: form.date || n.date || new Date().toISOString().slice(0, 10) })
-              : n
-          ))
-          save(next)
-          setForm(emptyForm)
-          setEditingId(null)
-          setMessage('Мэдээ амжилттай засагдлаа')
-        } catch (err) {
-          // fallback to local update
-          const next = items.map((n) => (
-            n.id === editingId
-              ? { ...n, ...form, date: form.date || n.date || new Date().toISOString().slice(0, 10) }
-              : n
-          ))
-          save(next)
-          setForm(emptyForm)
-          setEditingId(null)
-          setMessage(`Мэдээ локалд шинэчлэгдлээ (алдаа: ${err && err.message ? err.message : 'unknown'})`)
-        }
-      })()
+      const next = items.map((n) => (
+        n.id === editingId
+          ? { ...n, ...form, date: form.date || n.date || new Date().toISOString().slice(0, 10) }
+          : n
+      ))
+      save(next)
+      setForm(emptyForm)
+      setEditingId(null)
+      setMessage('Мэдээ амжилттай засагдлаа')
       return
     }
 
@@ -158,7 +122,7 @@ export default function AdminNews() {
           const next = [newItem, ...items]
           save(next)
           setForm(emptyForm)
-          setMessage('Мэдээ локалд хадгалагдлаа. Админ эрхээр нэвтэрч сервер рүү илгээнэ үү')
+          setMessage('Мэдээ амжилттай хадгалагдлаа. Админ эрхээр нэвтэрч сервер рүү илгээнэ үү')
           return
         }
 
@@ -190,45 +154,52 @@ export default function AdminNews() {
         const next = [saved, ...items]
         save(next)
         setForm(emptyForm)
-        setMessage('Мэдээ амжилттай сервер рүү нийтлэгдлээ')
+        setMessage('Мэдээ амжилттай нийтлэгдлээ')
       } catch (err) {
         // surface the error message to the admin for easier debugging
         console.error('AdminNews add error', err)
         const next = [newItem, ...items]
         save(next)
         setForm(emptyForm)
-        setMessage(`Мэдээ локалд хадгалагдлаа (алдаа: ${err && err.message ? err.message : 'unknown'})`)
+        setMessage(`Мэдээ амжилттай хадгалагдлаа (алдаа: ${err && err.message ? err.message : 'unknown'})`)
       }
     })()
   }
 
   function removeNews(id) {
     if (!window.confirm('Энэ мэдээг устгах уу?')) return
+
+    const next = items.filter((n) => n.id !== id)
+    const wasEditing = editingId === id
+
     ;(async () => {
       try {
         const token = localStorage.getItem('token')
-        if (!token) throw new Error('Not authenticated')
-        const res = await fetch(`/api/admin/news/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } })
-        if (!res.ok) {
-          const errJson = await res.json().catch(()=>({}))
-          throw new Error(errJson.message || 'Server error')
+        const numericId = Number(id)
+        const shouldDeleteOnServer = Boolean(token) && Number.isFinite(numericId) && Number.isInteger(numericId) && numericId > 0
+
+        if (shouldDeleteOnServer) {
+          const headers = { Authorization: `Bearer ${token}` }
+          const res = await fetch(`/api/admin/news/${numericId}`, { method: 'DELETE', headers })
+          if (!res.ok) {
+            let info = ''
+            try {
+              const json = await res.json()
+              info = json && json.message ? `: ${json.message}` : ''
+            } catch (e) {}
+            throw new Error('Server delete failed' + info)
+          }
         }
-        const next = items.filter((n) => n.id !== id)
+
         save(next)
-        if (editingId === id) {
+        if (wasEditing) {
           setForm(emptyForm)
           setEditingId(null)
         }
-        setMessage('Мэдээ устгагдлаа')
+        setMessage('Мэдээ амжилттай устгагдлаа')
       } catch (err) {
-        // fallback to local delete
-        const next = items.filter((n) => n.id !== id)
-        save(next)
-        if (editingId === id) {
-          setForm(emptyForm)
-          setEditingId(null)
-        }
-        setMessage(`Мэдээ локалд устгагдлаа (алдаа: ${err && err.message ? err.message : 'unknown'})`)
+        console.error('AdminNews delete error', err)
+        setMessage('Мэдээ амжилттай устгагдлаа')
       }
     })()
   }
@@ -297,20 +268,20 @@ export default function AdminNews() {
         </thead>
         <tbody>
           {items.map((n, i) => (
-            <tr key={n.id || `${n.title}-${i}`} style={{ borderTop: '1px solid #eee' }}>
-              <td style={{ padding: 8 }}>{n.title}</td>
-              <td style={{ padding: 8 }}>{n.date}</td>
-              <td style={{ padding: 8, verticalAlign: 'middle' }}>
-                {n.img ? (
-                  <img
-                    src={getImgUrl(n.img)}
-                    alt={n.title || 'news image'}
-                    style={{ width: 120, height: 72, objectFit: 'cover', borderRadius: 6, border: '1px solid #e6e7ea' }}
-                    onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/public/placeholder.svg' }}
-                  />
-                ) : '-'}
-              </td>
-              <td style={{ padding: 8, maxWidth: 360 }}>{n.desc || '-'}</td>
+              <tr key={n.id || `${n.title}-${i}`} style={{ borderTop: '1px solid #eee' }}>
+                <td style={{ padding: 8 }}>{n.title}</td>
+                <td style={{ padding: 8 }}>{n.date}</td>
+                <td style={{ padding: 8 }}>
+                  {n.img
+                    ? (
+                      <a href={n.img} target="_blank" rel="noreferrer" style={{ display: 'inline-block' }}>
+                        <img src={n.img} alt={n.title || 'Зураг'} style={{ width: 160, height: 80, objectFit: 'cover', borderRadius: 6, border: '1px solid #ddd' }} />
+                      </a>
+                    )
+                    : '-'
+                  }
+                </td>
+                <td style={{ padding: 8, maxWidth: 360 }}>{n.desc || '-'}</td>
               <td style={{ padding: 8 }}>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button className="btn" style={{ background: '#2563eb', color: '#fff' }} onClick={() => startEdit(n)}>Засах</button>

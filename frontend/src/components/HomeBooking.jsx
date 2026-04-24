@@ -3,7 +3,6 @@ import React, { useMemo, useState } from 'react'
 const STATUS_LABELS = {
   pending: 'Хүлээгдэж байна',
   confirmed: 'Баталгаажсан',
-  on_the_way: 'Замдаа',
   completed: 'Дууссан',
   cancelled: 'Цуцлагдсан',
 }
@@ -155,7 +154,6 @@ export default function HomeBooking() {
     <div className="dashboard">
       <div className="container" style={{ maxWidth: 860 }}>
         <h2>Гэр захиалга</h2>
-        <p>3 алхмаар гэрээр үйлчилгээний захиалга үүсгэнэ.</p>
 
         <div style={{ display: 'flex', gap: 8, margin: '12px 0 16px', flexWrap: 'wrap' }}>
           {[1, 2, 3].map((s) => (
@@ -164,73 +162,6 @@ export default function HomeBooking() {
             </div>
           ))}
         </div>
-
-        <form onSubmit={submitBooking} className="listing" style={{ padding: 14 }}>
-          {step === 1 && (
-            <div style={{ display: 'grid', gap: 10 }}>
-              <label>Үйлчилгээний төрөл
-                <select name="service_id" value={form.service_id} onChange={updateField}>
-                  <option value="general-checkup">Ерөнхий үзлэг</option>
-                  <option value="emergency">Яаралтай тусламж</option>
-                  <option value="dental-cleaning">Шүд цэвэрлэгээ</option>
-                  <option value="consultation">Зөвлөгөө</option>
-                </select>
-              </label>
-              <label>Дэлгэрэнгүй хаяг
-                <textarea name="address_text" value={form.address_text} onChange={updateField} required placeholder="Хаягаа дэлгэрэнгүй бичнэ үү" />
-              </label>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 8 }}>
-                <input name="latitude" value={form.latitude} onChange={updateField} placeholder="Latitude" />
-                <input name="longitude" value={form.longitude} onChange={updateField} placeholder="Longitude" />
-                <button type="button" className="btn btn-ghost" onClick={useMyLocation}>Pin авах</button>
-              </div>
-            </div>
-          )}
-
-          {step === 2 && (
-            <div style={{ display: 'grid', gap: 10 }}>
-              <label>Хүссэн өдөр
-                <input type="date" name="preferred_date" value={form.preferred_date} onChange={updateField} required />
-              </label>
-              <label>Хүссэн цаг
-                <input type="time" name="preferred_time" value={form.preferred_time} onChange={updateField} required />
-              </label>
-            </div>
-          )}
-
-          {step === 3 && (
-            <div style={{ display: 'grid', gap: 10 }}>
-              <label>Нэр
-                <input name="patient_name" value={form.patient_name} onChange={updateField} required />
-              </label>
-              <label>Утас
-                <input name="phone" value={form.phone} onChange={updateField} required />
-              </label>
-              <label>Нэмэлт тайлбар
-                <textarea name="additional_note" value={form.additional_note} onChange={updateField} />
-              </label>
-            </div>
-          )}
-
-          {error && <p style={{ color: 'red' }}>{error}</p>}
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 12 }}>
-            <button type="button" className="btn btn-ghost" disabled={step === 1 || loading} onClick={prevStep}>Буцах</button>
-            {step < 3 ? (
-              <button type="button" className="btn" disabled={!canGoNext || loading} onClick={nextStep}>Дараах</button>
-            ) : (
-              <button className="btn" type="submit" disabled={!canGoNext || loading}>{loading ? 'Илгээж байна…' : 'Захиалга илгээх'}</button>
-            )}
-          </div>
-        </form>
-
-        {created && (
-          <div className="listing" style={{ marginTop: 14, padding: 14 }}>
-            <h3>Захиалга амжилттай бүртгэгдлээ</h3>
-            <p><strong>Захиалгын ID:</strong> {created.booking_number || created.id}</p>
-            <p><strong>Өдөр/цаг:</strong> {created.preferred_date} {created.preferred_time}</p>
-            <p><strong>Төлөв:</strong> {STATUS_LABELS[created.status] || created.status}</p>
-          </div>
-        )}
 
         <div className="listing" style={{ marginTop: 16, padding: 14 }}>
           <h3>Захиалгын төлөв шалгах</h3>

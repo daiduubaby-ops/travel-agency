@@ -63,41 +63,31 @@ export default function BookedListings(){
     async function load(){
       setLoading(true)
       setError('')
-      // Load client-side sample bookings first (they may reference sample ger ids)
-      const local = JSON.parse(localStorage.getItem('sampleBookings') || '[]')
+      // Байр/гэрийн захиалга localStorage-оос биш shared backend/database-аас уншина.
+      // Home service booking-ийн хуучин local fallback-г түр хадгалж үлдээв.
       const localHome = JSON.parse(localStorage.getItem(LOCAL_HOME_BOOKINGS_KEY) || '[]')
       const userId = (() => { try { return JSON.parse(localStorage.getItem('user'))?.id } catch { return null } })()
-      const localForUser = local.filter(b => !userId || b.userId === userId)
       const localHomeForUser = localHome.filter(b => !userId || b.userId === userId)
       setHomeBookings(localHomeForUser)
       try{
         const token = localStorage.getItem('token')
         if(!token){
-          // no auth: show local bookings only
-          setBookings(localForUser)
+          setBookings([])
+          setError('Захиалгаа харахын тулд нэвтэрнэ үү')
           return
         }
         const res = await fetch('/api/bookings/my', { headers: { Authorization: `Bearer ${token}` } })
         if(!res.ok){
           try{ const data = await res.json(); setError(data.message || 'Захиалгыг уншихад алдаа гарлаа') } catch(e){ setError('Захиалгыг уншихад алдаа гарлаа') }
-          // still show local ones
-          setBookings(localForUser)
+          setBookings([])
         } else {
           const data = await res.json()
-          // The backend returns bookings tied to real gers (numeric ids). Client-side sample bookings
-          // use synthetic ids like "sample-ger-1" and won't match any backend ger. We should merge both
-          // but ensure sample bookings are preserved.
-          const merged = [...data]
-          // keep sample bookings not present in backend response
-          for(const b of localForUser){
-            if(!merged.some(m => m.id === b.id)) merged.push(b)
-          }
-          setBookings(merged)
+          setBookings(Array.isArray(data) ? data : [])
         }
       }catch(err){
         console.error(err)
         setError('Сүлжээний алдаа')
-        setBookings(localForUser)
+        setBookings([])
       }finally{ setLoading(false) }
     }
     load()

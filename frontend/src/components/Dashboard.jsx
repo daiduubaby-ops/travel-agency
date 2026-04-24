@@ -4,7 +4,6 @@ import './Dashboard.css'
 const HOME_STATUS_OPTIONS = [
   { value: 'pending', label: 'Хүлээгдэж байна' },
   { value: 'confirmed', label: 'Баталгаажсан' },
-  { value: 'on_the_way', label: 'Замдаа' },
   { value: 'completed', label: 'Дууссан' },
   { value: 'cancelled', label: 'Цуцлагдсан' },
 ]
@@ -111,34 +110,7 @@ export default function Dashboard(){
     } catch (e) {
       setHomeError('Сүлжээний алдаа')
     }
-  }
 
-  async function assignDoctor(item){
-    const doctor = window.prompt('Томилох эмчийн ID/Нэр оруулна уу', item.assigned_doctor_id || '')
-    if(!doctor) return
-    setHomeMsg('')
-    setHomeError('')
-    try {
-      const token = localStorage.getItem('token')
-      const res = await fetch(`/api/admin/home-bookings/${item.id}/assign-doctor`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
-        },
-        body: JSON.stringify({ assigned_doctor_id: doctor, admin_note: item.admin_note || '' })
-      })
-      const data = await res.json().catch(() => ({}))
-      if(!res.ok){
-        setHomeError(data.message || 'Эмч томилох үед алдаа гарлаа')
-        return
-      }
-      setHomeBookings(prev => prev.map(x => x.id === data.id ? data : x))
-      setHomeMsg('Эмч амжилттай томилогдлоо')
-    } catch (e) {
-      setHomeError('Сүлжээний алдаа')
-    }
-  }
 
   async function saveAdminNote(item, value){
     setHomeBookings(prev => prev.map(x => x.id === item.id ? { ...x, admin_note: value } : x))
@@ -206,12 +178,10 @@ export default function Dashboard(){
                   <thead>
                     <tr style={{textAlign:'left',borderBottom:'1px solid #e5e7eb'}}>
                       <th>ID</th>
-                      <th>Үйлчлүүлэгч</th>
                       <th>Утас</th>
                       <th>Хаяг</th>
                       <th>Үйлчилгээ</th>
                       <th>Огноо/цаг</th>
-                      <th>Томилогдсон эмч</th>
                       <th>Төлөв</th>
                       <th>Үйлдэл</th>
                     </tr>
@@ -231,7 +201,6 @@ export default function Dashboard(){
                           <div style={{display:'grid',gap:6}}>
                             <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
                               <button className="btn btn-ghost" onClick={() => updateHomeStatus(hb, 'confirmed')}>Баталгаажуулах</button>
-                              <button className="btn btn-ghost" onClick={() => assignDoctor(hb)}>Эмч томилох</button>
                               <button className="btn btn-ghost" onClick={() => updateHomeStatus(hb, 'cancelled')}>Цуцлах</button>
                             </div>
                             <select value={hb.status || 'pending'} onChange={(e) => updateHomeStatus(hb, e.target.value)}>
@@ -256,4 +225,5 @@ export default function Dashboard(){
       </div>
     </div>
   )
+}
 }

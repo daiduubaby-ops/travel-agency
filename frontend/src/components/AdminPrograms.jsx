@@ -187,7 +187,8 @@ export default function AdminPrograms(){
       cancellation: p.cancellation || '',
       nights: p.nights || '',
       language: p.language || '',
-      phone: p.phone || ''
+      phone: p.phone || '',
+      people: p.people || p.age || ''
     });
     setMessage('')
   }
@@ -426,7 +427,7 @@ export default function AdminPrograms(){
                   <td style={{padding:10,verticalAlign:'middle',width:140}}>{p.time}</td>
                   <td style={{padding:10,verticalAlign:'middle'}}>{p.location}</td>
                   <td style={{padding:10,verticalAlign:'middle',width:120}}>{p.price}</td>
-                  <td style={{padding:10,verticalAlign:'middle',width:120}}>{p.age}</td>
+                  <td style={{padding:10,verticalAlign:'middle',width:120}}>{p.people || p.age}</td>
                   <td style={{padding:10,verticalAlign:'middle',textAlign:'right'}}>
                     <button className="btn btn-ghost" onClick={() => handleEdit(p)}>Засах</button>
                     <button className="btn" onClick={() => handleDelete(p.id)} style={{marginLeft:8}} disabled={loading}>Устгах</button>
@@ -474,7 +475,7 @@ export default function AdminPrograms(){
           </div>
 
           <div>
-            <label style={{display:'block',fontSize:13,marginBottom:6,fontWeight:600}}>Хэл</label>
+            <label style={{display:'block',fontSize:13,marginBottom:6,fontWeight:600}}>Хэл / Жишээ: Монгол</label>
             <input name="language" value={form.language} onChange={handleChange} placeholder="Монгол" style={{width:'100%',padding:'10px 12px',borderRadius:8,border:'1px solid #e6e6e6'}} />
           </div>
           <div>

@@ -3,6 +3,33 @@ const router = express.Router();
 const { getDb } = require('../../db');
 const { auth, adminOnly } = require('../../../middleware/auth');
 
+function selectBookingById(db, id) {
+  return db.prepare(`
+    SELECT
+      b.*,
+      g.title AS ger_title,
+      g.location AS ger_location,
+      g.capacity AS ger_capacity,
+      p.title AS program_title,
+      p.capacity AS program_capacity,
+      u.name AS user_name,
+      u.email AS user_email
+    FROM bookings b
+    LEFT JOIN gers g ON b.gerId = g.id
+    LEFT JOIN programs p ON b.programId = p.id
+    LEFT JOIN users u ON b.userId = u.id
+    WHERE b.id = ?
+  `).get(id);
+}
+
+function decryptBookingRow(row, decrypt) {
+  if (!row) return row;
+  const out = { ...row };
+  if (out.user_name) out.user_name = decrypt(out.user_name);
+  if (out.user_email) out.user_email = decrypt(out.user_email);
+  return out;
+}
+
 // All admin routes in this file require auth and adminOnly
 router.use(auth, adminOnly);
 
@@ -15,11 +42,23 @@ router.get('/', async (req, res) => {
   try {
     const db = getDb();
     const { decrypt } = require('../../../utils/crypto');
-    // Use LEFT JOIN so bookings that reference non-DB items (eg. client-side/sample program bookings)
-    // still appear in the admin listing. Also include ger location when available.
-    const bookings = db.prepare('SELECT b.*, g.title as ger_title, g.location as ger_location, p.title as program_title, u.name as user_name FROM bookings b LEFT JOIN gers g ON b.gerId = g.id LEFT JOIN programs p ON b.programId = p.id LEFT JOIN users u ON b.userId = u.id ORDER BY b.createdAt DESC').all();
-    // decrypt any user fields included from users table
-    const out = bookings.map(b => Object.assign({}, b, { user_name: b.user_name ? decrypt(b.user_name) : b.user_name }));
+    const bookings = db.prepare(`
+      SELECT
+        b.*,
+        g.title AS ger_title,
+        g.location AS ger_location,
+        g.capacity AS ger_capacity,
+        p.title AS program_title,
+        p.capacity AS program_capacity,
+        u.name AS user_name,
+        u.email AS user_email
+      FROM bookings b
+      LEFT JOIN gers g ON b.gerId = g.id
+      LEFT JOIN programs p ON b.programId = p.id
+      LEFT JOIN users u ON b.userId = u.id
+      ORDER BY b.createdAt DESC
+    `).all();
+    const out = bookings.map((b) => decryptBookingRow(b, decrypt));
     res.json(out);
   } catch (err) {
     console.error(err);
@@ -36,15 +75,9 @@ router.get('/:id', async (req, res) => {
   try {
     const db = getDb();
     const { decrypt } = require('../../../utils/crypto');
-    // Use LEFT JOIN so an individual booking is still returned even if the referenced ger row
-    // does not exist (for example client-side program/sample bookings). User fields remain
-    // left-joined as well so admin can still inspect booking rows.
-    const booking = db.prepare('SELECT b.*, g.title as ger_title, g.location as ger_location, p.title as program_title, u.name as user_name, u.email as user_email FROM bookings b LEFT JOIN gers g ON b.gerId = g.id LEFT JOIN programs p ON b.programId = p.id LEFT JOIN users u ON b.userId = u.id WHERE b.id = ?').get(req.params.id);
+    const booking = selectBookingById(db, req.params.id);
     if (!booking) return res.status(404).json({ message: 'Олдсонгүй' });
-    // decrypt user fields
-    if (booking.user_name) booking.user_name = decrypt(booking.user_name);
-    if (booking.user_email) booking.user_email = decrypt(booking.user_email);
-    res.json(booking);
+    res.json(decryptBookingRow(booking, decrypt));
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Серверийн алдаа' });
@@ -61,10 +94,11 @@ router.put('/:id', async (req, res) => {
     const { status } = req.body;
     if (!status) return res.status(400).json({ message: 'Статус дутуу байна' });
     const db = getDb();
+    const { decrypt } = require('../../../utils/crypto');
     db.prepare('UPDATE bookings SET status = ? WHERE id = ?').run(status, req.params.id);
-    const updated = db.prepare('SELECT * FROM bookings WHERE id = ?').get(req.params.id);
+    const updated = selectBookingById(db, req.params.id);
     if (!updated) return res.status(404).json({ message: 'Олдсонгүй' });
-    res.json(updated);
+    res.json(decryptBookingRow(updated, decrypt));
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Серверийн алдаа' });
@@ -79,12 +113,13 @@ router.put('/:id', async (req, res) => {
 router.put('/:id/cancel', async (req, res) => {
   try {
     const db = getDb();
+    const { decrypt } = require('../../../utils/crypto');
     const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(req.params.id);
     if (!booking) return res.status(404).json({ message: 'Олдсонгүй' });
 
     db.prepare('UPDATE bookings SET status = ? WHERE id = ?').run('cancelled', req.params.id);
-    const updated = db.prepare('SELECT * FROM bookings WHERE id = ?').get(req.params.id);
-    res.json(updated);
+    const updated = selectBookingById(db, req.params.id);
+    res.json(decryptBookingRow(updated, decrypt));
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Серверийн алдаа' });
